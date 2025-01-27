@@ -140,7 +140,7 @@ annual_date_cte AS (
   WHERE pl.plan_name = 'pro annual'
 )
 
-SELECT CAST(AVG(ad.annual_date - td.trial_date) AS FLOAT(1)) AS avg_time_to_annual_upgrade
+SELECT ROUND(AVG(ad.annual_date - td.trial_date), 1) AS avg_time_to_annual_upgrade
 FROM trial_date_cte td
 JOIN annual_date_cte ad
 ON td.customer_id = ad.customer_id;
