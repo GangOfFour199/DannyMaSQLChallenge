@@ -1,0 +1,20 @@
+SELECT customer_id, p.plan_id, plan_name, start_date, price FROM foodie_fi.subscriptions s
+INNER JOIN foodie_fi.plans p
+ON s.plan_id = p.plan_id
+WHERE customer_id <= 8
+ORDER BY 1, 2;
+
+-- Based off the 8 sample customers provided in the sample from the subscriptions table, write a brief description about each customer’s onboarding journey.
+
+-- customer 1 was saitisifed with trial and purchased monthly sub straight after
+-- customer 2 did similar, however selected annual subscription
+-- 3 followed customer 1's plan
+-- 4 purchased monthly after trial, however cancelled 3 months in
+-- customer 5 and 8 also happy with trial period and purchased basic monthly
+-- customer 6 however cancelled their monthly sub 2 months along
+-- customer 7 purchased pro monthly after basic, looking to benefit from more features which would prove good value to them
+-- customer 8 felt basic monthly lacked the advantages worthwhile to them, so followed 7's lead and bought pro monthly
+
+-- OVERALL TRENDS => trial tends to prove a big success, many cutsomers here happy with what's on offer and went straight to subscriptions. Customers are incentivised to buy pro subs to gain even more benefits for their leisure.
+
+-- 2 cancellations out of 8 is not a poor rate at all, obviously we need to look at a larger sample size to get a more representative % of cancellations
