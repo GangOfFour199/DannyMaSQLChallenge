@@ -149,4 +149,70 @@ ON td.customer_id = ad.customer_id;
 
 
 10. Can you further breakdown this average value into 30 day periods (i.e. 0-30 days, 31-60 days etc)
+
+WITH trial_date_cte AS (
+  SELECT sub.customer_id, sub.start_date AS trial_date
+  FROM foodie_fi.subscriptions sub
+  JOIN foodie_fi.plans pl
+  ON sub.plan_id = pl.plan_id
+  WHERE pl.plan_name = 'trial'
+), 
+annual_date_cte AS (
+  SELECT sub.customer_id, sub.start_date AS annual_date
+  FROM foodie_fi.subscriptions sub
+  JOIN foodie_fi.plans pl
+  ON sub.plan_id = pl.plan_id
+  WHERE pl.plan_name = 'pro annual'
+)
+
+SELECT
+CASE WHEN (ad.annual_date - tr.trial_date) <= 30 THEN '0-30'
+WHEN (ad.annual_date - tr.trial_date) <= 60 THEN '31-60'
+WHEN (ad.annual_date - tr.trial_date) <= 90 THEN '61-90'
+WHEN (ad.annual_date - tr.trial_date) <= 120 THEN '91-120'
+WHEN (ad.annual_date - tr.trial_date) <= 150 THEN '121-150'
+WHEN (ad.annual_date - tr.trial_date) <= 180 THEN '151-180'
+WHEN (ad.annual_date - tr.trial_date) <= 210 THEN '181-210'
+WHEN (ad.annual_date - tr.trial_date) <= 240 THEN '211-240'
+WHEN (ad.annual_date - tr.trial_date) <= 270 THEN '241-270'
+WHEN (ad.annual_date - tr.trial_date) <= 300 THEN '271-300'
+WHEN (ad.annual_date - tr.trial_date) <= 330 THEN '301-330'
+WHEN (ad.annual_date - tr.trial_date) <= 360 THEN '331-360'
+END AS period_days, 
+COUNT(1) As num_customers
+FROM trial_date_cte tr
+JOIN annual_date_cte ad 
+ON tr.customer_id = ad.customer_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+period_days	num_customers
+0-30	49
+121-150	42
+151-180	36
+91-120	35
+61-90	34
+181-210	26
+31-60	24
+241-270	5
+211-240	4
+301-330	1
+331-360	1
+271-300	1
+
 11. How many customers downgraded from a pro monthly to a basic monthly plan in 2020?
+
+WITH next_plan_cte AS (
+SELECT sub.customer_id, sub.start_date, pl.plan_name AS first_plan, LEAD(pl.plan_name) OVER(PARTITION BY sub.customer_id ORDER BY pl.plan_id) AS next_plan
+FROM foodie_fi.subscriptions sub
+JOIN foodie_fi.plans pl
+ON sub.plan_id = pl.plan_id
+)
+
+SELECT COUNT(1) AS num_downgrades
+FROM next_plan_cte
+WHERE first_plan = 'pro monthly'
+AND next_plan = 'basic monthly'
+AND start_date BETWEEN '2020-01-01' AND '2020-12-31';
+
+-- There were no downgrades of monthly subscriptions in 2020
