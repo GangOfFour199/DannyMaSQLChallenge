@@ -1,7 +1,154 @@
 What is the unique count and total amount for each transaction type?
+
+SELECT txn_type, COUNT(*) AS number_transactions, 
+SUM(txn_amount) AS total_transaction_amount
+FROM data_bank.customer_transactions
+GROUP BY 1;
+
+-- purchase -> 1617 -> $806537
+-- deposit -> 2671 -> $1359168
+-- withdrawal -> 1580 -> $793003
+
 What is the average total historical deposit counts and amounts for all customers?
+
+AS a common table expression:
+
+WITH customerDeposits AS (
+SELECT customer_id, txn_type, COUNT(*) AS number_transactions, 
+SUM(txn_amount) AS total_transaction_amount
+FROM data_bank.customer_transactions
+WHERE txn_type = 'deposit'
+GROUP BY 1, 2
+)
+
+SELECT AVG(number_transactions), AVG(total_transaction_amount)
+FROM customerDeposits;
+
+-- AS a subquery:
+
+SELECT AVG(sub.number_transactions) AS avg_deposit_counts, AVG(sub.total_transaction_amount) AS avg_deposit_amounts
+FROM (
+SELECT customer_id, txn_type, COUNT(*) AS number_transactions, 
+SUM(txn_amount) AS total_transaction_amount
+FROM data_bank.customer_transactions
+WHERE txn_type = 'deposit'
+GROUP BY 1, 2
+) sub;
+
+-- avg deposit counts 5
+-- avg depsoit amount 2718.34
+
 For each month - how many Data Bank customers make more than 1 deposit and either 1 purchase or 1 withdrawal in a single month?
+
+WITH monthlyCustomerActions AS (
+  SELECT 
+    customer_id,
+    EXTRACT('month' FROM txn_date) AS months,
+    SUM(CASE WHEN txn_type = 'deposit' THEN 1 ELSE 0 END) AS deposit_count,
+    SUM(CASE WHEN txn_type = 'purchase' THEN 1 ELSE 0 END) AS purchase_count,
+    SUM(CASE WHEN txn_type = 'withdrawal' THEN 1 ELSE 0 END) AS withdrawal_count
+  FROM data_bank.customer_transactions
+  GROUP BY 1, 2
+)
+
+SELECT 
+  months,
+  COUNT(DISTINCT customer_id) AS customer_count
+FROM monthlyCustomerActions
+WHERE deposit_count > 1
+  AND (purchase_count = 1 OR withdrawal_count = 1)
+GROUP BY 1;
+
+/* 
+month 1 = 115 customers
+month 2 = 108
+month 3 - 113
+month 4 = 50
+*/
+
 What is the closing balance for each customer at the end of the month?
+
+-- Create a CTE monthly_transaction to find the SUM of all transactions in every month for each customer.
+
+WITH monthly_transaction AS (
+SELECT customer_id, (date_trunc('month', txn_date::date) + interval '1 month' - interval '1 day')::date
+AS end_date, 
+SUM(CASE WHEN txn_type IN('purchase', 'withdrawal') THEN -txn_amount ELSE txn_amount END) AS transactions
+FROM data_bank.customer_transactions
+GROUP BY 1, 2
+),
+--Create a CTE recursive_date to make a list of last days in each month for each customer.
+
+recursive_date AS (
+SELECT DISTINCT customer_id, CAST('2020-01-31' AS DATE) AS end_date
+FROM data_bank.customer_transactions
+UNION ALL
+SELECT customer_id, (date_trunc('month', end_date) + interval '1 month' - interval '1 day')::date + INTERVAL '1 month' AS end_date
+FROM recursive_date
+WHERE (date_trunc('month', end_date) + interval '1 month' - interval '1 day')::date + INTERVAL '1 month' <= '9999-12-31'
+)
+-- LEFT JOIN from recursive_dates to monthly_transactions to display all end dates of every month for each customer.
+SELECT customer_id, end_date, COALESCE(transactions, 0) AS num_transactions, 
+-- Calculate the monthly closing balance by taking the SUM of all transactions between the preceding row and current row.
+SUM(transactions) OVER(PARTITION BY customer_id ORDER BY end_date ROWS UNBOUNDED PRECEDING) AS closing_balance
+FROM recursive_date rd
+LEFT JOIN monthly_transaction mt
+ON rd.customer_id = mt.customer_id
+AND rd.end_date = mt.end_date;
+
 What is the percentage of customers who increase their closing balance by more than 5%?
+
+--CTE 1: Monthly transactions of each customer (Q4)
+
+WITH monthly_transaction AS (
+SELECT customer_id, (date_trunc('month', txn_date::date) + interval '1 month' - interval '1 day')::date
+AS end_date, 
+SUM(CASE WHEN txn_type IN('purchase', 'withdrawal') THEN -txn_amount ELSE txn_amount END) AS transactions
+FROM data_bank.customer_transactions
+GROUP BY 1, 2
+),
+--CTE 2: Increment last days of each month till they are equal to @maxDate (Q4)
+recursive_date AS (
+SELECT DISTINCT customer_id, CAST('2020-01-31' AS DATE) AS end_date
+FROM data_bank.customer_transactions
+UNION ALL
+SELECT customer_id, (date_trunc('month', end_date) + interval '1 month' - interval '1 day')::date + INTERVAL '1 month' AS end_date
+FROM recursive_date
+WHERE (date_trunc('month', end_date) + interval '1 month' - interval '1 day')::date + INTERVAL '1 month' <= '9999-12-31'
+), 
+-- CTE 3: Closing balance of each customer by monthly (Q4)
+customers_balance AS (
+SELECT customer_id, end_date, COALESCE(transactions, 0) AS num_transactions, 
+SUM(transactions) OVER(PARTITION BY customer_id ORDER BY end_date ROWS UNBOUNDED PRECEDING) AS closing_balance
+FROM recursive_date rd
+LEFT JOIN monthly_transaction mt
+ON rd.customer_id = mt.customer_id
+AND rd.end_date = mt.end_date
+),
+--CTE 4: CTE 3 & next_balance
+next_balance AS (
+SELECT *, LEAD(closing_balance) OVER(PARTITION BY customer_id ORDER BY end_date) AS next_balance
+  FROM customers_balance 
+),
+--CTE 5: Calculate the increase percentage of closing balance for each customer
+pct_increase AS (
+SELECT *, 
+  100*(next_balance/closing_balance) AS percentage 
+ FROM next_balance
+ WHERE closing_balance != 0 AND next_balance IS NOT NULL
+)
+
+--Create a temporary table because of the error: Null value is eliminated by an aggregate or other SET operation
+SELECT *
+INTO tempTable
+FROM pct_increase;
+
+--Calculate the percentage of customers whose closing balance increasing 5% compared to the previous month
+SELECT CAST(100*COUNT(DISTINCT customer_id) AS FLOAT(2)) / (SELECT COUNT(DISTINCT customer_id) FROM data_bank.customer_transactions) AS count
+FROM tempTable
+WHERE percentage > 5;
+
+-- answer is 75.8% of customers' clsoing balance increased by 5% from previous month.
+
 
 
