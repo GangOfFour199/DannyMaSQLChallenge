@@ -1,1 +1,77 @@
+How many unique nodes are there on the Data Bank system?
 
+SELECT COUNT(DISTINCT node_id) AS unique_nodes FROM data_bank.customer_nodes;
+-- Answer is 5
+
+What is the number of nodes per region?
+
+SELECT rg.region_name, COUNT(DISTINCT cn.node_id) AS unique_nodes FROM data_bank.customer_nodes cn
+JOIN data_bank.regions rg
+ON rg.region_id = cn.region_id
+GROUP By 1;
+-- 5 for each region
+
+How many customers are allocated to each region?
+
+SELECT rg.region_name, COUNT(DISTINCT cn.customer_id) AS customers FROM data_bank.customer_nodes cn
+JOIN data_bank.regions rg
+ON rg.region_id = cn.region_id
+GROUP By 1;
+
+/*
+Africa 102, Asia 95, America 105, Australia 110, Europe 88
+*/
+
+How many days on average are customers reallocated to a different node?
+
+/*
+Create a CTE customerDates containing the first date of every customer in each node
+Create a CTE reallocation to calculate the difference in days between the first date in this node and the first date in next node
+Take the average of those day differences
+*/
+
+WITH customerDates AS (
+  SELECT customer_id, region_id, node_id, MIN(start_date) AS earliest_date
+  FROM data_bank.customer_nodes
+  GROUP BY 1, 2, 3
+), 
+reallocation AS (
+  SELECT customer_id, region_id, node_id, LEAD(earliest_date) OVER(PARTITION BY customer_id ORDER BY earliest_date) - earliest_date AS days_diff
+  FROM customerDates
+)
+
+SELECT ROUND(AVG(days_diff), 2) AS avg_reallocation_time
+FROM reallocation;
+
+-- On average it takes 23.69 days for a customer to be reallocated
+
+What is the median, 80th and 95th percentile for this same reallocation days metric for each region?
+
+WITH customerDates AS (
+  SELECT customer_id, region_id, node_id, MIN(start_date) AS earliest_date
+  FROM data_bank.customer_nodes
+  GROUP BY 1, 2, 3
+), 
+reallocation AS (
+  SELECT customer_id, region_id, node_id, LEAD(earliest_date) OVER(PARTITION BY customer_id ORDER BY earliest_date) - earliest_date AS days_diff
+  FROM customerDates
+)
+
+SELECT 
+  DISTINCT r.region_id,
+  rg.region_name,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY r.days_diff) AS median,
+  PERCENTILE_CONT(0.8) WITHIN GROUP (ORDER BY r.days_diff) AS percentile_80,
+  PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY r.days_diff) AS percentile_95
+FROM reallocation r
+JOIN regions rg ON r.region_id = rg.region_id
+WHERE days_diff IS NOT NULL
+GROUP BY 1, 2;
+
+/*
+Africa -> median 21 -> 80th_percentile 33.2 -> 95th_percentile 58.8
+America -> median 21 -> 80th_percentile 33.2 -> 95th_percentile 57
+Australia -> median 22 -> 80th_percentile 31 -> 95th_percentile 54
+Europe -> median 22 -> 80th_percentile 31 -> 95th_percentile 54.3
+Asia -> median 22 -> 80th_percentile 32.4 -> 95th_percentile 49.8
+*/
