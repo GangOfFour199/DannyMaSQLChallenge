@@ -103,7 +103,7 @@ ORDER BY 3 DESC;
 
 /***SHOPIFY***/
 
--- unknwon once agains tops chart, this time with 24.91% of all SHOPIFY sales.
+-- Unknown once agains tops chart, this time with 24.91% of all SHOPIFY sales.
 -- Second is middle aged families, who contribute to 18.55% of all SHOPIFY sales.
 
 Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
