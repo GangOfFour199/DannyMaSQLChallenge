@@ -1,9 +1,116 @@
 What day of the week is used for each week_date value?
+
+SELECT TO_CHAR(formatted_date, 'day') AS day
+FROM data_mart.clean_weekly_sales
+LIMIT 20;
+-- ANSWER IS MONDAY
+
 What range of week numbers are missing from the dataset?
+
+-- use GENERATE_SERIES function to generate numbers 1 to 53 representing the 53 weeks in a year.
+
+SELECT * FROM GENERATE_SERIES(1, 53) AS all_weeks
+ -- Generate all weeks as a list
+WHERE all_weeks 
+-- conditional WHERE to distinguish which numbers not present in clean_weeky_sales week_number 
+NOT IN (SELECT DISTINCT cws.week_number FROM
+data_mart.clean_weekly_sales cws)
+ORDER BY 1;
+
+-- WEEKS 1 to 11 and 37 to 53 not present, 28 weeks in total
+
 How many total transactions were there for each year in the dataset?
+
+SELECT calendar_year, SUM(transactions) AS total_transactions
+FROM data_mart.clean_weekly_sales
+GROUP BY 1;
+
+-- 2018 = 346406460
+-- 2019 = 365639285
+-- 2020 = 375813651
+
 What is the total sales for each region for each month?
-What is the total count of transactions for each platform
+
+SELECT region, TO_CHAR(TO_DATE(month_number::varchar, 'MM'), 'month') AS month, SUM(sales) AS regional_monthly_sales
+FROM data_mart.clean_weekly_sales
+GROUP BY 1, month_number 
+ORDER BY 1, month_number;
+
+-- Sample of 'march'
+AFRICA -> 567767480 sales
+ASIA -> 529770793 sales
+CANADA -> 144634329 sales
+EUROPE -> 35337093 sales
+OCEANIA -> 783282888 sales
+SOUTH AMERICA -> 71023109 sales
+USA -> 225353043 sales
+
+What is the total count of transactions for each platform?
+
+SELECT platform, COUNT(transactions) AS num_transactions
+FROM data_mart.clean_weekly_sales
+GROUP BY 1;
+
+-- Shopify -> 8549 transactions made
+-- Retail -> 8568 transactions made
+
 What is the percentage of sales for Retail vs Shopify for each month?
+
+SELECT calendar_year, TO_CHAR(TO_DATE(month_number::varchar, 'MM'), 'month') AS month, ROUND(100*SUM(CASE WHEN platform = 'Retail' THEN sales::NUMERIC ELSE 0 END) / SUM(sales), 2) AS retail_pct, ROUND(100*SUM(CASE WHEN platform = 'Shopify' THEN sales::NUMERIC ELSE 0 END) / SUM(sales), 2) AS shopify_pct
+FROM data_mart.clean_weekly_sales
+GROUP BY 1, month_number
+ORDER BY 1, month_number;
+
+-- SAMPLE of the year '2018' => month, retail_pct, shopify_pct
+
+-- march	97.92	2.08
+-- april	97.93	2.07
+-- may	97.73	2.27
+-- june	97.76	2.24
+-- july	97.75	2.25
+-- august	97.71	2.29
+-- september	97.68	2.32
+
 What is the percentage of sales by demographic for each year in the dataset?
-Which age_band and demographic values contribute the most to Retail sales?
+
+SELECT calendar_year, ROUND(100*SUM(CASE WHEN demographic = 'Couples' THEN sales::NUMERIC ELSE 0 END) / SUM(sales), 2) AS couples_pct, ROUND(100*SUM(CASE WHEN demographic = 'Families' THEN sales::NUMERIC ELSE 0 END) / SUM(sales), 2) AS families_pct, ROUND(100*SUM(CASE WHEN demographic = 'unknown' THEN sales::NUMERIC ELSE 0 END) / SUM(sales), 2) AS unknown_pct
+FROM data_mart.clean_weekly_sales
+GROUP BY 1 
+ORDER BY 1;
+
+-- year -> couples_pct -> families_pct -> unknown_pct
+
+-- 2018 26.38	31.99	41.63
+-- 2019	27.28	32.47	40.25
+-- 2020	28.72	32.73	38.55
+
+Which age_band and demographic values contribute the most to Retail sales, and which to Shopify sales?
+
+/***RETAIL***/
+
+WITH retail_totals_cte AS (
+SELECT * 
+FROM data_mart.clean_weekly_sales
+WHERE platform = 'Retail')
+
+SELECT age_band, demographic, SUM(sales) AS total_sales_category, ROUND(100* SUM(sales)::NUMERIC / (SELECT SUM(sales) FROM retail_totals_cte), 2) AS pct_contribution
+FROM retail_totals_cte
+GROUP BY 1, 2
+ORDER BY 3 DESC;
+
+-- Unknown for both age and demopgraphic top the chart with 40.52% of all RETAIL sales.
+-- Excluding unknown, retireees with families contribute 16.73% of all RETAIL sales
+
+/***SHOPIFY***/
+
+-- unknwon once agains tops chart, this time with 24.91% of all SHOPIFY sales.
+-- Second is middle aged families, who contribute to 18.55% of all SHOPIFY sales.
+
 Can we use the avg_transaction column to find the average transaction size for each year for Retail vs Shopify? If not - how would you calculate it instead?
+
+SELECT calendar_year, platform, ROUND(AVG(avg_transactions), 2) AS avg_transaction_size, ROUND(SUM(sales)::NUMERIC / SUM(transactions), 2) AS avg_yearly_transaction_size 
+FROM data_mart.clean_weekly_sales
+GROUP BY 1, 2
+ORDER BY 1, 2;
+
+/* In order to find an average, you take the total of something and you divide by the number of something. avg_transactions has already been aggregated function wise as an average, so averaging it again just takes an average of the previous averaged value */ 
