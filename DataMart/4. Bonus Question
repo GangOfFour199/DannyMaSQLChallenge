@@ -1,0 +1,51 @@
+Which areas of the business have the highest negative impact in sales metrics performance in 2020 for the 12 week before and after period?
+
+region
+platform
+age_band
+demographic
+customer_type
+
+Do you have any further recommendations for Danny’s team at Data Mart or any interesting insights based off this analysis?
+
+-- For this analysis, you need to substitute the data column in the summations expression, than group by said column.
+
+/********************** 12 WEEK PERIOD************************/
+
+
+WITH twelve_weeks_before AS (
+SELECT DISTINCT formatted_date 
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN (TO_DATE('2020-06-15', 'yy/mm/dd') - INTERVAL '12 weeks') AND (TO_DATE('2020-06-15', 'yy/mm/dd') - INTERVAL '1 week') 
+), 
+twelve_weeks_after AS (
+SELECT DISTINCT formatted_date
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN TO_DATE('2020-06-15', 'yy/mm/dd') AND (TO_DATE('2020-06-15', 'yy/mm/dd') + INTERVAL '11 weeks') 
+), 
+summations AS (
+SELECT region, -- CHANGE HERE!!!
+SUM(CASE WHEN formatted_date IN (SELECT * FROM twelve_weeks_before) THEN sales END) AS sales_weeks_before,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM twelve_weeks_after) THEN sales END) AS sales_weeks_after
+FROM data_mart.clean_weekly_sales
+GROUP BY 1
+)
+
+SELECT *, (sales_weeks_after - sales_weeks_before) AS sales_variance,
+-- Don't forget to convert to numeric value in order to round properly!
+ROUND(100*(sales_weeks_after - sales_weeks_before)::NUMERIC / sales_weeks_before , 2) AS pct_growth
+FROM summations
+ORDER BY 3 ASC;
+
+-- REGION => Asia was negatively impacted the most in terms of sales in this 12 week epoch at - 3.26%. Only Europe experienced positive sales growth, which suggests only in Europe did the suatainable packagaing make a positive impression
+-- PLATFORM => Retail experienced negative growth compared to shopify, whereas Shopify sales reflected a healthy % growth in sales
+-- AGE_BAND => Unknown group impacted the most, all age groups worryingly showed decline in sales. Suggests all ages do not approve of the change in packaging 
+-- DEMOGRAPHICS => Unknown once again showing largest negative growth, decreasing sales to families more than couples
+-- CUSTOMER_TYPE => There is a steady increase in sales to new consumers, however the change in packaging has dissuaded a lot of short, medium & long-term consumers as growth has delcined 2.27%
+
+/*CONCLUSION*/
+
+-- The shift in platform habits for purchasing products has proven most seismic in my eyes. A change in consumer behaviour such as this example could be due to the packaging being impractical or unappealing to the eye. Hence why people would deliver to their home as opposed to buying it on the high street and carrying the product around with them. We cannot forget the impact of covid on shopping habits additionally.
+
+-- Regionally, Europe proved to be very anomalous. There appears to be a different perspective of sustainability in this continent, therefore even if with drawbacks European consumers are happy to forgo these packaging issues and continue to purchase products from this company. The selling proposition here is that European consumers are attracted to companies where they sense they are contributing positively to the environment, within the realm of their lifestyles and habits.
+
