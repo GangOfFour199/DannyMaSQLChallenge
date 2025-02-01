@@ -37,4 +37,104 @@ FROM summations;
 -- The verdict is since the introduction of sustainable packagaing, the sales have decreased by 1.15%.
 
 What about the entire 12 weeks before and after?
+
+-- modify 4 week period to 12 week periods, the structure of the operation remains the same
+
+WITH twelve_weeks_before AS (
+SELECT DISTINCT formatted_date 
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN (TO_DATE('2020-06-15', 'yy-mm-dd') - INTERVAL '12 weeks') AND (TO_DATE('2020-06-15', 'yy-mm-dd') - INTERVAL '1 week')
+), 
+twelve_weeks_after AS (
+SELECT DISTINCT formatted_date
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN TO_DATE('2020-06-15', 'yy-mm-dd') AND (TO_DATE('2020-06-15', 'yy-mm-dd') + INTERVAL '11 weeks')
+), 
+summations AS (
+SELECT
+SUM(CASE WHEN formatted_date IN (SELECT * FROM twelve_weeks_before) THEN sales END) AS sales_weeks_before,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM twelve_weeks_after) THEN sales END) AS sales_weeks_after
+FROM data_mart.clean_weekly_sales
+)
+
+SELECT *, (sales_weeks_after - sales_weeks_before) AS sales_variance,
+-- Don't forget to convert to numeric value in order to round properly!
+ROUND(100*(sales_weeks_after - sales_weeks_before)::NUMERIC / sales_weeks_before , 2) AS pct_growth
+FROM summations;
+
+-- With a lengthier time frame considered, there is a pertinent question to be asked as to how the introduction of sustainable packaging has coincided with negative business growth.
+
+-- It would be beneficial for the company to conduct a survery or retrieve as much customer feedback possible to determine what has changed in consumer perception of the company and their thoughts on the change to a new packaging design.
+
 How do the sale metrics for these 2 periods before and after compare with the previous years in 2018 and 2019?
+
+-- To compare with previous years, we declare a target date cte
+-- We use cte's for 4 weeks before & after, then for 12 weeks
+
+/********************** 4 WEEK PERIOD************************/
+
+WITH target_date_cte AS (
+SELECT DISTINCT week_number
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date = '2020-06-15'
+),
+four_weeks_before AS (
+SELECT DISTINCT formatted_date 
+FROM data_mart.clean_weekly_sales
+WHERE week_number BETWEEN (SELECT week_number FROM target_date_cte) - 4 AND (SELECT week_number FROM target_date_cte) - 1
+), 
+four_weeks_after AS (
+SELECT DISTINCT formatted_date
+FROM data_mart.clean_weekly_sales
+WHERE week_number BETWEEN (SELECT week_number FROM target_date_cte) AND (SELECT week_number FROM target_date_cte) + 3
+), 
+summations AS (
+SELECT calendar_year,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_before) THEN sales END) AS sales_weeks_before,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_after) THEN sales END) AS sales_weeks_after
+FROM data_mart.clean_weekly_sales
+GROUP BY 1
+)
+
+SELECT *, (sales_weeks_after - sales_weeks_before) AS sales_variance,
+-- Don't forget to convert to numeric value in order to round properly!
+ROUND(100*(sales_weeks_after - sales_weeks_before)::NUMERIC / sales_weeks_before , 2) AS pct_growth
+FROM summations
+ORDER BY 1;
+
+-- For a 4 week period, there was minimal growth experienced in the two years previous to 2020, only in 2020 has there been a significant shift in growth
+
+/********************** 12 WEEK PERIOD************************/
+
+WITH target_date_cte AS (
+SELECT DISTINCT week_number
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date = '2020-06-15'
+),
+four_weeks_before AS (
+SELECT DISTINCT formatted_date 
+FROM data_mart.clean_weekly_sales
+WHERE week_number BETWEEN (SELECT week_number FROM target_date_cte) - 12 AND (SELECT week_number FROM target_date_cte) - 1
+), 
+four_weeks_after AS (
+SELECT DISTINCT formatted_date
+FROM data_mart.clean_weekly_sales
+WHERE week_number BETWEEN (SELECT week_number FROM target_date_cte) AND (SELECT week_number FROM target_date_cte) + 11
+), 
+summations AS (
+SELECT calendar_year,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_before) THEN sales END) AS sales_weeks_before,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_after) THEN sales END) AS sales_weeks_after
+FROM data_mart.clean_weekly_sales
+GROUP BY 1
+)
+
+SELECT *, (sales_weeks_after - sales_weeks_before) AS sales_variance,
+-- Don't forget to convert to numeric value in order to round properly!
+ROUND(100*(sales_weeks_after - sales_weeks_before)::NUMERIC / sales_weeks_before , 2) AS pct_growth
+FROM summations
+ORDER BY 1;
+
+-- For a 12 week period, the company enjoyed impressive growth in 2018, the year following the growth of sales stabilised and is now facing a downtrend of 2.14%.
+-- After carrying out further analyses, it does highlight that sustainable packaging of products has proven disadvantageous for business growth 
+
