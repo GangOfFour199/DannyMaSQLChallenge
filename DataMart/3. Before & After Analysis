@@ -7,5 +7,34 @@ We would include all week_date values for 2020-06-15 as the start of the period 
 Using this analysis approach - answer the following questions:
 
 What is the total sales for the 4 weeks before and after 2020-06-15? What is the growth or reduction rate in actual values and percentage of sales?
+
+-- declare the 4 weeks before and after cte's
+-- total sales together in sums cte that groups sales by which 4 week period they fall into
+-- eventually, select all columns of dat from summations cte to calculate sales variance and % variance
+
+WITH four_weeks_before AS (
+SELECT DISTINCT formatted_date 
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN (TO_DATE('2020-06-15', 'yy-mm-dd') - INTERVAL '4 weeks') AND (TO_DATE('2020-06-15', 'yy-mm-dd') - INTERVAL '1 week')
+), 
+four_weeks_after AS (
+SELECT DISTINCT formatted_date
+FROM data_mart.clean_weekly_sales
+WHERE formatted_date BETWEEN TO_DATE('2020-06-15', 'yy-mm-dd') AND (TO_DATE('2020-06-15', 'yy-mm-dd') + INTERVAL '3 weeks')
+), 
+summations AS (
+SELECT
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_before) THEN sales END) AS sales_weeks_before,
+SUM(CASE WHEN formatted_date IN (SELECT * FROM four_weeks_after) THEN sales END) AS sales_weeks_after
+FROM data_mart.clean_weekly_sales
+)
+
+SELECT *, (sales_weeks_after - sales_weeks_before) AS sales_variance,
+-- Don't forget to convert to numeric value in order to round properly!
+ROUND(100*(sales_weeks_after - sales_weeks_before)::NUMERIC / sales_weeks_before , 2) AS pct_growth
+FROM summations;
+
+-- The verdict is since the introduction of sustainable packagaing, the sales have decreased by 1.15%.
+
 What about the entire 12 weeks before and after?
 How do the sale metrics for these 2 periods before and after compare with the previous years in 2018 and 2019?
