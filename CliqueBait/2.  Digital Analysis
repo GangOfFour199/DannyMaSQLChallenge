@@ -86,7 +86,7 @@ FROM customer_decision_cte;
 
 /* 
    checkout_count	purchase_count	checkout_no_purchase_pct
-   2103	                  1777	        15.50
+   2103	                 1777	        15.50
 */
 
 What are the top 3 pages by number of views?
