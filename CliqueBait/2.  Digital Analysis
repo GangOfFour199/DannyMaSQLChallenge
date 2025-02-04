@@ -45,7 +45,49 @@ ORDER BY 1;
 
 What is the percentage of visits which have a purchase event?
 
+Join the events and events_identifier table and filter by Purchase event only.
+As the data is now filtered to having Purchase events only, counting the distinct visit IDs would give you the number of purchase events.
+Then, divide the number of purchase events with a subquery of total number of distinct visits from the events table.
+
+SELECT ei.event_name, COUNT(ei.event_type) AS num_purchases, CAST(100 * CAST(COUNT(DISTINCT ev.visit_id) AS FLOAT) / (SELECT COUNT(DISTINCT visit_id) FROM clique_bait.events) AS DECIMAL(10,2)) AS purchase_pct
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase'
+GROUP BY 1;
+
+-- Purchase	1777 purchases	49.86% of visits
+
+/* IMPORTANT! => must convert distinct purchase visit_id's as a float in order to calcultate a decimal pct at the end */
+
 What is the percentage of visits which view the checkout page but do not have a purchase event?
+
+Part 1: Create a CTE and using CASE statements, find the SUM() of:
+page_name = 'Checkout' (Checkout), and assign "1" to these events. These events are when user viewed the checkout page.
+event_name ='Purchase' and assign "1" to these events. These events signifies users who made a purchase.
+
+WITH customer_decision_cte AS (
+  SELECT SUM(CASE WHEN ph.page_name = 'Checkout' THEN 1 ELSE 0 END) AS checkout_count,
+  SUM(CASE WHEN ei.event_name = 'Purchase' THEN 1 ELSE 0 END) AS purchase_count
+  FROM clique_bait.events ev
+  JOIN clique_bait.event_identifier ei
+  ON ev.event_type = ei.event_type
+  JOIN clique_bait.page_hierarchy ph
+  ON ev.page_id = ph.page_id
+  WHERE ph.page_name = 'Checkout' OR ei.event_name = 'Purchase'
+)
+
+Part 2: Using the table we have created, find the percentage of visits which view checkout page.
+
+SELECT checkout_count, purchase_count, CAST(100 * (checkout_count - purchase_count)/ CAST(checkout_count AS FLOAT) AS DECIMAL(10,2)) AS checkout_no_purchase_pct
+FROM customer_decision_cte;
+
+-- MAKE SURE TO CONVERT FINAL % VALUE TO DECIMAL, CONVERT THE DIVISOR TOTAL TO A FLOAT!!!! 
+
+/* 
+   checkout_count	purchase_count	checkout_no_purchase_pct
+   2103	         1777	         15.50
+*/
 
 What are the top 3 pages by number of views?
 
