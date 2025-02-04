@@ -91,6 +91,52 @@ FROM customer_decision_cte;
 
 What are the top 3 pages by number of views?
 
+-- Note. Due to ambiguity of question, I have provided answers wehre the event solely relates to a page view, or for all events that occur on pages
+
+/***** where any event type permitted ******/
+
+SELECT ph.page_id, ph.page_name, COUNT(ev.page_id) AS num_views
+FROM clique_bait.events ev
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+GROUP BY 1, 2
+ORDER BY 3 DESC
+LIMIT 3; 
+
+/*
+page_id	page_name	num_views
+2	All Products	4752
+9	Lobster	2515
+10	Crab	2513
+*/
+
+/**** WHERE ev.event_type = 1 aka 'Page View' *****/
+
+/*
+page_id	page_name	num_views
+2	All Products	3174
+12	Checkout	2103
+1	Home Page	1782
+*/
+
 What is the number of views and cart adds for each product category?
+
+SELECT ph.product_category, SUM(CASE WHEN ei.event_name ILIKE '%Page View%' THEN 1 ELSE 0 END) AS view_count,
+SUM(CASE WHEN ei.event_name ILIKE '%Add to cart%' THEN 1 ELSE 0 END) AS cart_count
+FROM clique_bait.events ev
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ph.product_category IS NOT NULL
+GROUP BY 1
+ORDER BY 2, 3; 
+
+/*
+product_category	view_count	cart_count
+Luxury	3032	1870
+Fish	4633	2789
+Shellfish	6204	3792
+*/
 
 What are the top 3 products by purchases?
