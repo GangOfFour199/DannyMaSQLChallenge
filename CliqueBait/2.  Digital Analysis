@@ -58,7 +58,7 @@ GROUP BY 1;
 
 -- Purchase	1777 purchases	49.86% of visits
 
-/* IMPORTANT! => must convert distinct purchase visit_id's as a float in order to calcultate a decimal pct at the end */
+/* IMPORTANT! => must convert distinct purchase visit_id's as a float in order to calculate a decimal pct at the end */
 
 What is the percentage of visits which view the checkout page but do not have a purchase event?
 
