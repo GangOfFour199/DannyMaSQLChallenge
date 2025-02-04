@@ -173,13 +173,13 @@ ORDER BY 2 DESC;
 
 /*
 page_name items_bought
-Lobster   754
-Oyster	 726
-Crab	    719
-Salmon	 711
+Lobster      754
+Oyster         726
+Crab         719
+Salmon	    711
 Kingfish	 707
 Black Truffle	707
-Abalone	 699
+Abalone	       699
 Russian Caviar	697
-Tuna	    697
+Tuna	       697
 */
