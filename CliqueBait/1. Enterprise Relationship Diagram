@@ -4,7 +4,7 @@ Using the following DDL schema details to create an ERD for all the Clique Bait 
 // Docs: https://dbml.dbdiagram.io/docs
 
 Table event_identifier {
-  event_type integer
+  event_type integer [primary key]
   event_name varchar
 }
 
@@ -24,22 +24,25 @@ Table page_hierarchy {
 }
 
 Table users {
-  user_id integer
+  user_id integer [primary key]
   cookie_id varchar
   start_date timestamp
 }
 
 Table events {
-  visit_id varchar
-  cookie_id varchar
-  page_id integer
+  visit_id varchar [primary key]
+  cookie_id varchar 
+  page_id integer 
   event_type integer
   sequence_number integer
   event_time timestamp
 }
 
 Ref: event_identifier.event_type - events.event_type
+/* Each record in Table A (event_identifier) references each record in table B (events) => one-to-one relationship */ 
 
-Ref: events.cookie_id > users.cookie_id
+Ref: events.cookie_id > users.cookie_id 
+/* Multiple records of cookie_id in Table A (events) reference one distinct record of cookie_id in Table B (users) => One-to-Many */
 
 Ref: events.page_id > page_hierarchy.page_id
+/* One-to-Many relationship */
