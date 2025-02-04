@@ -1,1 +1,45 @@
 Using the following DDL schema details to create an ERD for all the Clique Bait datasets.
+
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table event_identifier {
+  event_type integer
+  event_name varchar
+}
+
+Table campaign_identifier {
+  campaign_id integer [primary key]
+  products varchar
+  campaign_name varchar
+  start_date timestamp
+  end_date timestamp
+}
+
+Table page_hierarchy {
+  page_id integer [primary key]
+  page_name varchar
+  product_category varchar
+  product_id integer
+}
+
+Table users {
+  user_id integer
+  cookie_id varchar
+  start_date timestamp
+}
+
+Table events {
+  visit_id varchar
+  cookie_id varchar
+  page_id integer
+  event_type integer
+  sequence_number integer
+  event_time timestamp
+}
+
+Ref: event_identifier.event_type < events.event_type
+
+Ref: users.cookie_id > events.cookie_id
+
+Ref: page_hierarchy.page_id < events.page_id
