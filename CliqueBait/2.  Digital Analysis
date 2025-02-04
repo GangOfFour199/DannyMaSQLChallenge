@@ -140,3 +140,46 @@ Shellfish	6204	3792
 */
 
 What are the top 3 products by purchases?
+
+-- Create a cte which selects all the purchase visits
+-- Categorise by page_name and delineate count of purchase visits for each item as number of purchases
+-- Join expression onto events table
+-- Ensure product_category is NOT NULL therefore analysis conducted on actual product pages, not general pages
+-- User must add to cart before making a purchase, so filter by event_name 'Add to Cart' alongside the purchase visits
+
+WITH purchase_visits_cte AS (
+SELECT visit_id
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase'
+)
+
+SELECT ph.page_name, COUNT(ev.visit_id) AS items_bought
+FROM clique_bait.events ev
+-- right join CTE to keep null values in events
+RIGHT JOIN purchase_visits_cte cte
+ON ev.visit_id = cte.visit_id
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ph.product_category IS NOT NULL
+-- Have to add to cart in order to make a purchase!
+AND ei.event_name = 'Add to Cart'
+-- or ei.event_type = 2
+GROUP BY 1
+ORDER BY 2 DESC;
+
+/*
+page_name	items_bought
+Lobster	      754
+Oyster	      726
+Crab	         719
+Salmon	      711
+Kingfish	      707
+Black Truffle	707
+Abalone	      699
+Russian Caviar	697
+Tuna	         697
+*/
