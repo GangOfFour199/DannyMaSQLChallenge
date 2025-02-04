@@ -38,8 +38,8 @@ Table events {
   event_time timestamp
 }
 
-Ref: event_identifier.event_type < events.event_type
+Ref: event_identifier.event_type - events.event_type
 
-Ref: users.cookie_id > events.cookie_id
+Ref: events.cookie_id > users.cookie_id
 
-Ref: page_hierarchy.page_id < events.page_id
+Ref: events.page_id > page_hierarchy.page_id
