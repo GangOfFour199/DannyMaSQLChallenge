@@ -106,8 +106,8 @@ LIMIT 3;
 /*
 page_id	page_name	num_views
 2	All Products	4752
-9	Lobster	2515
-10	Crab	2513
+9	Lobster	      2515
+10	Crab	         2513
 */
 
 /**** WHERE ev.event_type = 1 aka 'Page View' *****/
