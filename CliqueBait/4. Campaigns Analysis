@@ -28,15 +28,19 @@ To get a list of products added into cart sorted by sequence:
 
 DROP TABLE IF EXISTS clique_bait.visits_summary;
 
+DROP TABLE IF EXISTS clique_bait.visits_summary;
+
 CREATE TABLE clique_bait.visits_summary AS
-SELECT us.user_id, ev.visit_id, MIN(ev.event_time) AS visit_start_time, 
+SELECT us.user_id, 
+ev.visit_id, 
+MIN(ev.event_time) AS visit_start_time, 
 SUM(CASE WHEN ei.event_name = 'Page View' THEN 1 ELSE 0 END) AS viewed_count, 
 SUM(CASE WHEN ei.event_name = 'Add to Cart' THEN 1 ELSE 0 END) AS cart_count,
 SUM(CASE WHEN ei.event_name = 'Ad Impression' THEN 1 ELSE 0 END) AS impressions_count, 
 SUM(CASE WHEN ei.event_name = 'Ad Click' THEN 1 ELSE 0 END) AS clicked_ads_count, 
 SUM(CASE WHEN ei.event_name = 'Purchase' THEN 1 ELSE 0 END) AS purchase_made, 
 ci.campaign_name, 
-STRING_AGG(CASE WHEN ei.event_name = 'Add to Cart' AND ph.product_id IS NOT NULL THEN ph.page_name ELSE NULL END, ',') WITHIN GROUP (ORDER BY ev.sequence_number) AS cart_products
+STRING_AGG(CASE WHEN ph.product_id IS NOT NULL AND ei.event_name = 'Add to Cart' THEN ph.page_name ELSE NULL END, ', ' ORDER BY ev.sequence_number ASC) AS cart_products
 FROM clique_bait.events ev
 LEFT JOIN clique_bait.users us
 ON ev.cookie_id = us.cookie_id
@@ -45,9 +49,10 @@ ON ev.event_type = ei.event_type
 LEFT JOIN clique_bait.campaign_identifier ci
 ON ev.event_time BETWEEN ci.start_date AND ci.end_date
 LEFT JOIN clique_bait.page_hierarchy ph
-ON ev.page_id = ph.page_id
-GROUP BY 1, 2, ci.campaign_name;
+ON ev.page_id = ph.page_id 
+GROUP BY 1, 2, ci.campaign_name
+ORDER BY 1;
+
 
 SELECT * 
 FROM clique_bait.visits_summary;
-
