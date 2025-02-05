@@ -170,7 +170,22 @@ ORDER BY 2 DESC;
 
 Which product had the highest view to purchase percentage?
 
+SELECT product_name, CAST(100 * CAST(purchased_count AS FLOAT) / CAST(viewed_count AS FLOAT) AS DECIMAL(10,2)) AS view_to_purchase_pct
+FROM clique_bait.products_summary
+ORDER BY 2 DESC;
 
+-- Lobster	48.74
 
 What is the average conversion rate from view to cart add?
+
+SELECT AVG(CAST(100 * CAST(cart_adds AS FLOAT) / CAST(viewed_count AS FLOAT) AS DECIMAL(10,2))) AS avg_view_to_cart_conversion_pct
+FROM clique_bait.products_summary;
+
+-- 60.95%
+
 What is the average conversion rate from cart add to purchase?
+
+SELECT ROUND(AVG(CAST(100 * CAST(purchased_count AS FLOAT) / CAST(cart_adds AS FLOAT) AS DECIMAL(10,2))), 2) AS avg_cart_to_purchase_conversion_pct
+FROM clique_bait.products_summary;
+
+-- 75.93%
