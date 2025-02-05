@@ -28,8 +28,6 @@ To get a list of products added into cart sorted by sequence:
 
 DROP TABLE IF EXISTS clique_bait.visits_summary;
 
-DROP TABLE IF EXISTS clique_bait.visits_summary;
-
 CREATE TABLE clique_bait.visits_summary AS
 SELECT us.user_id, 
 ev.visit_id, 
