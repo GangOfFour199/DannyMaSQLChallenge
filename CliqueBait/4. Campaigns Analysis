@@ -54,5 +54,3 @@ ORDER BY 1;
 
 SELECT * 
 FROM clique_bait.visits_summary;
-
-![image](https://user-images.githubusercontent.com/101379141/197105542-33dd43ac-7a30-4f7e-a0bb-2f9febea3bbd.png)
