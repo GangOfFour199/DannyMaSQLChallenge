@@ -65,8 +65,6 @@ ON pi.product_id = pp.product_id;
 SELECT * 
 FROM clique_bait.products_summary;
 
-Additionally, create another table which further aggregates the data for the above points but this time for each product category instead of individual products.
-
 /*
 product_id | product_name	| viewed_count | cart_adds | abandoned_count | purchased_count
 1	  Salmon	1559	938	227	711
@@ -78,6 +76,77 @@ product_id | product_name	| viewed_count | cart_adds | abandoned_count | purchas
 7	  Lobster	1547	968	214	754
 8	  Crab	1564	949	230	719
 9	  Oyster	1568	943	217	726
+*/
+
+Additionally, create another table which further aggregates the data for the above points but this time for each product category instead of individual products.
+
+-- Substitute product_id & page_name for product_category
+
+WITH category_info AS (
+SELECT ph.product_category, SUM(CASE WHEN ei.event_name = 'Page View' THEN 1 ELSE 0 END) AS viewed_count,
+SUM(CASE WHEN ei.event_name = 'Add to Cart' THEN 1 ELSE 0 END) AS cart_adds
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+WHERE ph.product_id IS NOT NULL
+GROUP BY 1
+), 
+abandoned_categories AS (
+SELECT ph.product_category, COUNT(1) As abandoned_count
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type 
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+-- ADD filters here, 1st check is to see if added to cart
+WHERE ei.event_name = 'Add to Cart'
+-- second check that no purchase visit made. Create a subquery to note all purchase visits, then filter visit id that IS NOT FOUND IN subquery's visit id's
+AND ev.visit_id NOT IN (
+SELECT ev.visit_id 
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase')
+GROUP BY 1
+), 
+purchased_categories AS (
+SELECT ph.product_category, COUNT(1) As purchased_count
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type 
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+-- all purchases must have been added to cart first!
+WHERE ei.event_name = 'Add to Cart'
+-- This time, we want our visit id to present in the purchase visit id subquery
+AND ev.visit_id IN (
+SELECT ev.visit_id 
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase')
+GROUP BY 1
+)
+
+SELECT ci.*, ac.abandoned_count, pc.purchased_count
+-- transfer into a temporary table for data analysis
+INTO clique_bait.product_categories_summary
+FROM category_info ci
+JOIN abandoned_categories ac 
+ON ci.product_category = ac.product_category
+JOIN purchased_categories pc
+ON ci.product_category = pc.product_category;
+
+SELECT * 
+FROM clique_bait.product_categories_summary;
+
+/*
+product_category	viewed_count	cart_adds	abandoned_count	purchased_count
+Fish	  4633	2789	674	2115
+Luxury	  3032	1870	466	1404
+Shellfish	  6204	3792	894	2898
 */
 
 Use your 2 new output tables - answer the following questions:
