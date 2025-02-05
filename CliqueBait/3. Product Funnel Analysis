@@ -152,7 +152,25 @@ Shellfish	      6204	3792	894	2898
 Use your 2 new output tables - answer the following questions:
 
 Which product had the most views, cart adds and purchases?
+
+SELECT *
+FROM clique_bait.products_summary;
+
+-- views => oyster 1568
+-- cart adds => lobster 968
+-- purchases => lobster 754
+
 Which product was most likely to be abandoned?
+
+SELECT product_name, abandoned_count
+FROM clique_bait.products_summary
+ORDER BY 2 DESC;
+
+-- Tuna 234
+
 Which product had the highest view to purchase percentage?
+
+
+
 What is the average conversion rate from view to cart add?
 What is the average conversion rate from cart add to purchase?
