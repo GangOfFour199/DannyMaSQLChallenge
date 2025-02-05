@@ -4,7 +4,81 @@ How many times was each product viewed?
 How many times was each product added to cart?
 How many times was each product added to a cart but not purchased (abandoned)?
 How many times was each product purchased?
+
+WITH product_info AS (
+SELECT ph.product_id, ph.page_name AS product_name, SUM(CASE WHEN ei.event_name = 'Page View' THEN 1 ELSE 0 END) AS viewed_count,
+SUM(CASE WHEN ei.event_name = 'Add to Cart' THEN 1 ELSE 0 END) AS cart_adds
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+WHERE ph.product_id IS NOT NULL
+GROUP BY 1, 2
+), 
+abandoned_products AS (
+SELECT ph.product_id, ph.page_name AS product_name, COUNT(1) As abandoned_count
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type 
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+-- ADD filters here, 1st check is to see if added to cart
+WHERE ei.event_name = 'Add to Cart'
+-- second check that no purchase visit made. Create a subquery to note all purchase visits, then filter visit id that IS NOT FOUND IN subquery's visit id's
+AND ev.visit_id NOT IN (
+SELECT ev.visit_id 
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase')
+GROUP BY 1, 2
+), 
+purchased_products AS (
+SELECT ph.product_id, ph.page_name AS product_name, COUNT(1) As purchased_count
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type 
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+-- all purchases must have been added to cart first!
+WHERE ei.event_name = 'Add to Cart'
+-- This time, we want our visit id to present in the purchase visit id subquery
+AND ev.visit_id IN (
+SELECT ev.visit_id 
+FROM clique_bait.events ev
+JOIN clique_bait.event_identifier ei
+ON ev.event_type = ei.event_type
+WHERE ei.event_name = 'Purchase')
+GROUP BY 1, 2
+)
+
+SELECT pi.*, ap.abandoned_count, pp.purchased_count
+-- transfer into a temporary table for data analysis
+INTO clique_bait.products_summary
+FROM product_info pi
+JOIN abandoned_products ap 
+ON pi.product_id = ap.product_id
+JOIN purchased_products pp
+ON pi.product_id = pp.product_id;
+
+SELECT * 
+FROM clique_bait.products_summary;
+
 Additionally, create another table which further aggregates the data for the above points but this time for each product category instead of individual products.
+
+/*
+product_id | product_name	| viewed_count | cart_adds | abandoned_count | purchased_count
+1	Salmon	1559	938	227	711
+2	Kingfish	1559	920	213	707
+3	Tuna	1515	931	234	697
+4	Russian Caviar	1563	946	249	697
+5	Black Truffle	1469	924	217	707
+6	Abalone	1525	932	233	699
+7	Lobster	1547	968	214	754
+8	Crab	1564	949	230	719
+9	Oyster	1568	943	217	726
+*/
 
 Use your 2 new output tables - answer the following questions:
 
