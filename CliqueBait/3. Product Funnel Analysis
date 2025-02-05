@@ -144,9 +144,9 @@ FROM clique_bait.product_categories_summary;
 
 /*
 product_category	viewed_count	cart_adds	abandoned_count	purchased_count
-Fish	  4633	2789	674	2115
-Luxury	  3032	1870	466	1404
-Shellfish	  6204	3792	894	2898
+Fish	      4633	2789	674	2115
+Luxury	      3032	1870	466	1404
+Shellfish	      6204	3792	894	2898
 */
 
 Use your 2 new output tables - answer the following questions:
