@@ -10,11 +10,33 @@ campaign_name: map the visit to a campaign if the visit_start_time falls between
 impression: count of ad impressions for each visit
 click: count of ad clicks for each visit
 
+/****************** STEPS ******************/
+
+We will merge multiple tables:
+Using JOIN for users and events table
+joining event_identifier table using LEFT JOIN to filter the event_name in SELECT
+Joining campaign_identifier table using LEFT JOIN as we want all lines that have event_time between start_date and end_date.
+Joining page_hierachy table using LEFT JOIN as we want all the rows in the page_hierachy table
+To generate earliest visit_start_time for each unique visit_id, use MIN() to find the 1st visit_time.
+Wrap SUM() with CASE statement in order to find the total number of counts for page_views, cart_adds, purchase, ad impression and ad click.
+
+To get a list of products added into cart sorted by sequence:
+1. Firstly, use a CASE statement to only get cart add events.
+2. Then, use STRING_AGG() to separate products by comma , and sort the sequence using `sequence_number WITHIN GROUP
+
+/********************** SOLUTION *******************/
+
 DROP TABLE IF EXISTS clique_bait.visits_summary;
 
 CREATE TABLE clique_bait.visits_summary AS
-SELECT us.user_id, ev.visit_id, MIN(ev.event_time) AS visit_start_time, SUM(CASE WHEN ei.event_name = 'Page View' THEN 1 ELSE 0 END) AS viewed_count, SUM(CASE WHEN ei.event_name = 'Add to Cart' THEN 1 ELSE 0 END) AS cart_count,
-SUM(CASE WHEN ei.event_name = 'Ad Impression' THEN 1 ELSE 0 END) AS impressions_count, SUM(CASE WHEN ei.event_name = 'Ad Click' THEN 1 ELSE 0 END) AS clicked_ads_count, SUM(CASE WHEN ei.event_name = 'Purchase' THEN 1 ELSE 0 END) AS purchase_made, ci.campaign_name, STRING_AGG(CASE WHEN ei.event_name = 'Add to Cart' AND ph.product_id IS NOT NULL THEN ph.page_name ELSE NULL END, ',') WITHIN GROUP (ORDER BY ev.sequence_number) AS cart_products
+SELECT us.user_id, ev.visit_id, MIN(ev.event_time) AS visit_start_time, 
+SUM(CASE WHEN ei.event_name = 'Page View' THEN 1 ELSE 0 END) AS viewed_count, 
+SUM(CASE WHEN ei.event_name = 'Add to Cart' THEN 1 ELSE 0 END) AS cart_count,
+SUM(CASE WHEN ei.event_name = 'Ad Impression' THEN 1 ELSE 0 END) AS impressions_count, 
+SUM(CASE WHEN ei.event_name = 'Ad Click' THEN 1 ELSE 0 END) AS clicked_ads_count, 
+SUM(CASE WHEN ei.event_name = 'Purchase' THEN 1 ELSE 0 END) AS purchase_made, 
+ci.campaign_name, 
+STRING_AGG(CASE WHEN ei.event_name = 'Add to Cart' AND ph.product_id IS NOT NULL THEN ph.page_name ELSE NULL END, ',') WITHIN GROUP (ORDER BY ev.sequence_number) AS cart_products
 FROM clique_bait.events ev
 LEFT JOIN clique_bait.users us
 ON ev.cookie_id = us.cookie_id
