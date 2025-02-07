@@ -54,3 +54,10 @@ ORDER BY 1;
 
 SELECT * 
 FROM clique_bait.visits_summary;
+
+-- Use the subsequent dataset to generate at least 5 insights for the Clique Bait team
+
+/****** RELATIONSHIP BETWEEN AD IMPRESSIONS & AD CLICKS ********************/
+
+
+
