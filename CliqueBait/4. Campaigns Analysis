@@ -72,6 +72,61 @@ Half Off - Treat Your Shellf(ish)	1180 purchases
 -- Conclusive evidence to suggest that discounting instead of additional free product with a full purchase provides more appeal to consumers
 -- Furthermore, obvious signs that half price on shellfish was the most successful marketing campaign, understandable with all shellfish products retailing at 50% of standard price
 
+-- BREAKING IT DOWN FURTHER TO TOP PRODUCT SALES PER CAMPAIGN PERIOD
+
+SELECT vs.campaign_name, ph.product_id, ph.page_name, SUM(vs.purchase_made) AS campaign_purchases
+FROM clique_bait.events ev
+JOIN clique_bait.visits_summary vs
+ON ev.visit_id = vs.visit_id
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+WHERE ph.product_id IS NOT NULL
+AND vs.campaign_name IS NOT NULL
+GROUP BY 1, 2, 3
+ORDER BY 1, 4 DESC;
+
+/***************** TOP 5 PRODUCT SALES PER CAMPAIGN PERIOD ***************/
+
+WITH top_sales AS (
+SELECT vs.campaign_name, ph.product_id, ph.page_name,
+SUM(vs.purchase_made) AS campaign_purchases,
+DENSE_RANK() OVER (PARTITION BY vs.campaign_name ORDER BY SUM(vs.purchase_made) DESC) AS ranking
+FROM clique_bait.events ev
+JOIN clique_bait.visits_summary vs
+ON ev.visit_id = vs.visit_id
+JOIN clique_bait.page_hierarchy ph
+ON ev.page_id = ph.page_id
+WHERE ph.product_id IS NOT NULL
+AND vs.campaign_name IS NOT NULL
+GROUP BY 1, 2, 3
+ORDER BY 1, 4 DESC  
+)
+
+SELECT *
+FROM top_sales
+WHERE ranking <= 5;
+
+/*
+campaign_name	product_id	page_name	campaign_purchases	ranking
+25% Off - Living The Lux Life	9	Oyster	223	1
+25% Off - Living The Lux Life	3	Tuna	218	2
+25% Off - Living The Lux Life	7	Lobster	217	3
+25% Off - Living The Lux Life	4	Russian Caviar	216	4
+25% Off - Living The Lux Life	8	Crab	215	5
+BOGOF - Fishing For Compliments	9	Oyster	144	1
+BOGOF - Fishing For Compliments	2	Kingfish	140	2
+BOGOF - Fishing For Compliments	3	Tuna	140	2
+BOGOF - Fishing For Compliments	1	Salmon	140	2
+BOGOF - Fishing For Compliments	6	Abalone	136	3
+BOGOF - Fishing For Compliments	7	Lobster	135	4
+BOGOF - Fishing For Compliments	8	Crab	132	5
+Half Off - Treat Your Shellf(ish)	7	Lobster	1246	1
+Half Off - Treat Your Shellf(ish)	8	Crab	1224	2
+Half Off - Treat Your Shellf(ish)	9	Oyster	1214	3
+Half Off - Treat Your Shellf(ish)	4	Russian Caviar	1195	4
+Half Off - Treat Your Shellf(ish)	2	Kingfish	1195	4
+Half Off - Treat Your Shellf(ish)	5	Black Truffle	1186	5
+*/
 
 /****** RELATIONSHIP BETWEEN AD IMPRESSIONS & AD CLICKS ********************/
 
