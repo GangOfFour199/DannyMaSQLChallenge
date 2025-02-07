@@ -57,6 +57,22 @@ FROM clique_bait.visits_summary;
 
 -- Use the subsequent dataset to generate at least 5 insights for the Clique Bait team
 
+/************ CAMPAIGNS SUCCESS ****************/
+
+SELECT campaign_name, SUM(purchase_made) AS campaign_purchases
+FROM clique_bait.visits_summary
+GROUP BY 1;
+
+/* 
+BOGOF - Fishing For Compliments	127 purchases
+Half Off - Treat Your Shellf(ish)	1180 purchases
+25% Off - Living The Lux Life	202 purchases
+*/
+
+-- Conclusive evidence to suggest that discounting instead of additional free product with a full purchase provides more appeal to consumers
+-- Furthermore, obvious signs that half price on shellfish was the most successful marketing campaign, understandable with all shellfish products retailing at 50% of standard price
+
+
 /****** RELATIONSHIP BETWEEN AD IMPRESSIONS & AD CLICKS ********************/
 
 
