@@ -92,6 +92,37 @@ product_id	product_name	category_id	category_name	total_quantity	rank
 */
 
 What is the percentage split of revenue by product for each segment?
+
+WITH revenues_cte AS (
+SELECT s.prod_id, d.product_name, d.segment_id, d.segment_name, 
+SUM(s.qty * s.price) AS total_revenue_before_discount
+FROM balanced_tree.sales s
+JOIN balanced_tree.product_details d
+ON s.prod_id = d.product_id
+GROUP BY 1, 2, 3, 4
+ORDER BY 5 DESC
+)
+
+SELECT *, ROUND(100 * total_revenue_before_discount / (SUM(total_revenue_before_discount) OVER (PARTITION BY segment_name)), 2) AS revenue_split_pct
+FROM revenues_cte
+ORDER BY segment_id, segment_name;
+
+/*
+prod_id	product_name	segment_id	segment_name	total_revenue_before_discount	revenue_split_pct
+e31d39	Cream Relaxed Jeans - Womens	3	Jeans	37070	17.79
+e83aa3	Black Straight Jeans - Womens	3	Jeans	121152	58.15
+c4a632	Navy Oversized Jeans - Womens	3	Jeans	50128	24.06
+d5e9a6	Khaki Suit Jacket - Womens	4	Jacket	86296	23.51
+72f5d4	Indigo Rain Jacket - Womens	4	Jacket	71383	19.45
+9ec847	Grey Fashion Jacket - Womens	4	Jacket	209304	57.03
+c8d436	Teal Button Up Shirt - Mens	5	Shirt	36460	8.98
+5d267b	White Tee Shirt - Mens	5	Shirt	152000	37.43
+2a2353	Blue Polo Shirt - Mens	5	Shirt	217683	53.60
+2feb6b	Pink Fluro Polkadot Socks - Mens	6	Socks	109330	35.50
+f084eb	Navy Solid Socks - Mens	6	Socks	136512	44.33
+b9a74d	White Striped Socks - Mens	6	Socks	62135	20.18
+*/
+
 What is the percentage split of revenue by segment for each category?
 What is the percentage split of total revenue by category?
 What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
