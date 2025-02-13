@@ -35,6 +35,26 @@ segment_id	segment_name	total_quantity	total_revenue	total_discount
 */
 
 What is the top selling product for each segment?
+
+SELECT sub.*
+FROM (
+SELECT d.product_id, d.product_name, d.segment_id, d.segment_name, SUM(s.qty) AS total_quantity,
+RANK() OVER (PARTITION BY d.segment_name ORDER BY SUM(s.qty) DESC) AS rank
+FROM balanced_tree.sales s
+JOIN balanced_tree.product_details d
+ON s.prod_id = d.product_id
+GROUP BY 1, 2, 3, 4
+ORDER BY 5 DESC) sub
+WHERE sub.rank = 1;
+
+/*
+product_id	product_name	segment_id	segment_name	total_quantity	rank
+9ec847	Grey Fashion Jacket - Womens	4	Jacket	3876	1
+c4a632	Navy Oversized Jeans - Womens	3	Jeans	3856	1
+2a2353	Blue Polo Shirt - Mens	5	Shirt	3819	1
+f084eb	Navy Solid Socks - Mens	6	Socks	3792	1
+*/
+
 What is the total quantity, revenue and discount for each category?
 
 SELECT d.category_id, d.category_name, SUM(s.qty) AS total_quantity, 
@@ -53,6 +73,24 @@ category_id	category_name	total_quantity	total_revenue	total_discount
 */
 
 What is the top selling product for each category?
+
+SELECT sub.*
+FROM (
+SELECT d.product_id, d.product_name, d.category_id, d.category_name, SUM(s.qty) AS total_quantity,
+RANK() OVER (PARTITION BY category_name ORDER BY SUM(s.qty) DESC) AS rank
+FROM balanced_tree.sales s
+JOIN balanced_tree.product_details d
+ON s.prod_id = d.product_id
+GROUP BY 1, 2, 3, 4
+ORDER BY 5 DESC) sub
+WHERE sub.rank = 1;
+
+/*
+product_id	product_name	category_id	category_name	total_quantity	rank
+9ec847	Grey Fashion Jacket - Womens	1	Womens	3876	1
+2a2353	Blue Polo Shirt - Mens	2	Mens	3819	1
+*/
+
 What is the percentage split of revenue by product for each segment?
 What is the percentage split of revenue by segment for each category?
 What is the percentage split of total revenue by category?
