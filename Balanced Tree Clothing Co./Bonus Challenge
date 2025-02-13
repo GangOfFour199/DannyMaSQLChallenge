@@ -27,3 +27,5 @@ cte.category_id, cte.segment_id, cte.style_id, cte.category_name, cte.segment_na
 FROM balanced_tree.product_prices pp
 LEFT JOIN cte
 ON pp.id = cte.style_id;
+
+/*********** WE HAVE TRANSFORMED THESE TWO DATASETS TO REPLICATE balanced_tree.product_details SCHEMA ***************/
