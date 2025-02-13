@@ -1,6 +1,31 @@
 How many unique transactions were there?
+
+SELECT COUNT (DISTINCT txn_id)
+FROM balanced_tree.sales;
+
+-- 2500 unique transactions
+
 What is the average unique products purchased in each transaction?
+
+SELECT FLOOR(AVG(sub.unique_products)) AS avg_prodcuts
+FROM (
+SELECT txn_id, COUNT (DISTINCT prod_id) AS unique_products
+FROM balanced_tree.sales
+GROUP BY 1) sub;
+
+-- 6 unique products on average per transaction
+
 What are the 25th, 50th and 75th percentile values for the revenue per transaction?
+
 What is the average discount value per transaction?
+
+SELECT ROUND(AVG(sub.discount_total), 2) AS avg_discounts
+FROM (
+SELECT txn_id, ROUND(SUM(qty * price * discount::NUMERIC / 100), 2) AS discount_total
+FROM balanced_tree.sales
+GROUP BY 1) sub; 
+
+-- Average discount was 62.49 per transaction
+
 What is the percentage split of all transactions for members vs non-members?
 What is the average revenue for member transactions and non-member transactions?
