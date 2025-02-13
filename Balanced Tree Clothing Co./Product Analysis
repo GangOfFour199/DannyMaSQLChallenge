@@ -93,7 +93,7 @@ product_id	product_name	category_id	category_name	total_quantity	rank
 
 What is the percentage split of revenue by product for each segment?
 
-WITH revenues_cte AS (
+WITH products_cte AS (
 SELECT s.prod_id, d.product_name, d.segment_id, d.segment_name, 
 SUM(s.qty * s.price) AS total_revenue_before_discount
 FROM balanced_tree.sales s
@@ -104,7 +104,7 @@ ORDER BY 5 DESC
 )
 
 SELECT *, ROUND(100 * total_revenue_before_discount / (SUM(total_revenue_before_discount) OVER (PARTITION BY segment_name)), 2) AS revenue_split_pct
-FROM revenues_cte
+FROM products_cte
 ORDER BY segment_id, segment_name;
 
 /*
@@ -124,6 +124,45 @@ b9a74d	White Striped Socks - Mens	6	Socks	62135	20.18
 */
 
 What is the percentage split of revenue by segment for each category?
+
+WITH segments_cte AS (
+SELECT d.segment_id, d.segment_name, d.category_id, d.category_name, 
+SUM(s.qty * s.price) AS total_revenue_before_discount
+FROM balanced_tree.sales s
+JOIN balanced_tree.product_details d
+ON s.prod_id = d.product_id
+GROUP BY 1, 2, 3, 4
+ORDER BY 5 DESC
+)
+
+SELECT *, ROUND(100 * total_revenue_before_discount / (SUM(total_revenue_before_discount) OVER (PARTITION BY category_name)), 2) AS revenue_split_pct
+FROM segments_cte
+ORDER BY category_id, 6 DESC;
+
+/*
+segment_id	segment_name	category_id	category_name	total_revenue_before_discount	revenue_split_pct
+4	Jacket	1	Womens	366983	63.79
+3	Jeans	1	Womens	208350	36.21
+5	Shirt	2	Mens	406143	56.87
+6	Socks	2	Mens	307977	43.13
+*/
+
 What is the percentage split of total revenue by category?
+
+SELECT pd.category_id, pd.category_name,
+ROUND(100 * SUM(s.qty * s.price)::NUMERIC / /* total revenue subquery */ 
+(SELECT SUM(qty * price) As total_revenue FROM balanced_tree.sales), 2) AS revenue_split_pct
+FROM balanced_tree.sales s
+JOIn balanced_tree.product_details pd
+ON s.prod_id = pd.product_id
+GROUP BY 1, 2
+ORDER BY 3 DESC;
+
+/*
+category_id	category_name	revenue_split_pct
+2	Mens	55.38
+1	Womens	44.62
+*/
+
 What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
 What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
