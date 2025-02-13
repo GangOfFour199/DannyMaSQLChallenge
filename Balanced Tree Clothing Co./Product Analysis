@@ -196,7 +196,7 @@ b9a74d	White Striped Socks - Mens	0.497
 
 What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
 
--- Define a combination count which inlcudes 3 products in 1 single transaction
+-- Define a combination count which includes 3 products in 1 single transaction
 -- Determine the frequency of these combination counts to find the most common trio
 -- Join sales table on itself 2 times, in order to have 3 tables to join together
 -- Include conditional AND clause, where product_id is either less than subsequent tables prod_id, as then the combinations will be of 3 unique prod_id
