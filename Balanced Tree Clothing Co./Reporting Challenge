@@ -5,3 +5,26 @@ Imagine that the Chief Financial Officer (which is also Danny) has asked for all
 He first wants you to generate the data for January only - but then he also wants you to demonstrate that you can easily run the samne analysis for February without many changes (if at all).
 
 Feel free to split up your final outputs into as many tables as you need - but be sure to explicitly reference which table outputs relate to which question for full marks :)
+
+/******* JANUARY PRODUCT SALES ****************/
+
+CREATE TEMP TABLE sales_monthly AS
+(SELECT *
+FROM balanced_tree.sales
+WHERE EXTRACT(MONTH FROM start_txn_time) = 1
+AND EXTRACT(YEAR FROM start_txn_time) = 2021
+ORDER BY 7);
+
+SELECT * 
+FROM sales_monthly;
+
+-- NOTE => as this is a temporary schema, CANNOT create a relation schema i.e. balanced_tree.sales_monthly NOT ALLOWED!
+
+/***** TO UPDATE TO CORRESPONDING MONTH ************/
+-- Change EXTRACT(MONTH FROM start_txn_time) = 1-12 for each month or if necessary, YEAR = 2020, 2022 etc.
+-- Can utilise all the questions and solutions from previous analyses, susbstitute balanced_tree.sales for sales_monthly
+
+/*
+SELECT -- Add your SQL query here
+FROM /* sales_monthly */
+*/
