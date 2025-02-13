@@ -1,4 +1,20 @@
 What are the top 3 products by total revenue before discount?
+
+SELECT s.prod_id, d.product_name, SUM(s.qty * s.price) AS product_revenue
+FROM balanced_tree.sales s
+JOIN balanced_tree.product_details d
+ON s.prod_id = d.product_id
+GROUP BY 1, 2
+ORDER BY 3 DESC
+LIMIT 3;
+
+/*
+prod_id	product_name	product_revenue
+2a2353	Blue Polo Shirt - Mens	217683
+9ec847	Grey Fashion Jacket - Womens	209304
+5d267b	White Tee Shirt - Mens	152000
+*/
+
 What is the total quantity, revenue and discount for each segment?
 What is the top selling product for each segment?
 What is the total quantity, revenue and discount for each category?
