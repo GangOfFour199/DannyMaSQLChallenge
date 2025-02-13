@@ -1,3 +1,20 @@
 What was the total quantity sold for all products?
+
+SELECT SUM(qty) FROM balanced_tree.sales;
+
+-- 45216 total products sold
+
 What is the total generated revenue for all products before discounts?
+
+SELECT SUM(qty * price) AS total_revenue FROM balanced_tree.sales;
+
+-- 1280453 in total generated revenue
+
 What was the total discount amount for all products?
+
+-- As it will round off discounted price each time, ensure you convert discount data type to numeric and round to 2 decimal places
+
+SELECT ROUND(SUM(qty * price * discount::NUMERIC / 100), 2) AS total_discount
+FROM balanced_tree.sales;
+
+-- 156229.14 in total discounts
