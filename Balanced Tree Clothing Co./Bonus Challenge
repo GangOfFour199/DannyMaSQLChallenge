@@ -1,3 +1,29 @@
 Use a single SQL query to transform the product_hierarchy and product_prices datasets to the product_details table.
 
 Hint: you may want to consider using a recursive CTE to solve this problem!
+
+-- USE RECURSIVE cte function to break down datasets into smaller ones and to take information form one column to categorise into new columns
+-- Datsets brokwn down smaller into style, segment and category partitione by level_name
+-- LEFT JOIN these sub datasets, parent id joins to segment id
+-- parent id of segment level_name join onto category id
+-- This leaves remaining id between 7 to 18 to be the style id's
+
+WITH cte AS (
+SELECT ph.id AS style_id, ph.level_text AS style_name,
+tab1.id AS segment_id, tab1.level_text As segment_name, 
+tab1.parent_id AS category_id, tab2.level_text AS category_name
+FROM balanced_tree.product_hierarchy ph
+LEFT JOIN balanced_tree.product_hierarchy tab1
+ON ph.parent_id = tab1.id
+LEFT JOIN balanced_tree.product_hierarchy tab2
+ON tab1.parent_id = tab2.id
+WHERE ph.id BETWEEN 7 AND 18
+)
+
+
+SELECT pp.product_id, pp.price, 
+CONCAT(cte.style_name, ' ', cte.segment_name, ' - ', cte.category_name) AS product_name,
+cte.category_id, cte.segment_id, cte.style_id, cte.category_name, cte.segment_name, cte.style_name
+FROM balanced_tree.product_prices pp
+LEFT JOIN cte
+ON pp.id = cte.style_id;
