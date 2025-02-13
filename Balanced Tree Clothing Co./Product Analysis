@@ -165,4 +165,59 @@ category_id	category_name	revenue_split_pct
 */
 
 What is the total transaction “penetration” for each product? (hint: penetration = number of transactions where at least 1 quantity of a product was purchased divided by total number of transactions)
+
+-- Market penetration is a measure of how much a product or service is being used by target customers compared to the total estimated market for that product or service
+-- Penetration Rate is a metric used to measure the extent to which a product, service, or brand has been adopted by a target market or population
+
+SELECT prod_id, product_name, ROUND(COUNT(txn_id)::NUMERIC / (SELECT COUNT(DISTINCT txn_id) AS total_unique_txns FROM balanced_tree.sales), 3) AS txn_penetration
+FROM balanced_tree.sales s
+LEFT JOIN balanced_tree.product_details pd
+ON s.prod_id = pd.product_id
+GROUP BY 1, 2
+ORDER BY 3 DESC;
+
+/*
+prod_id	product_name	txn_penetration
+f084eb	Navy Solid Socks - Mens	0.512
+c4a632	Navy Oversized Jeans - Womens	0.510
+9ec847	Grey Fashion Jacket - Womens	0.510
+2a2353	Blue Polo Shirt - Mens	0.507
+5d267b	White Tee Shirt - Mens	0.507
+2feb6b	Pink Fluro Polkadot Socks - Mens	0.503
+72f5d4	Indigo Rain Jacket - Womens	0.500
+d5e9a6	Khaki Suit Jacket - Womens	0.499
+e83aa3	Black Straight Jeans - Womens	0.498
+c8d436	Teal Button Up Shirt - Mens	0.497
+e31d39	Cream Relaxed Jeans - Womens	0.497
+b9a74d	White Striped Socks - Mens	0.497
+*/
+
+-- Our results show that out of the entirety of transactions that occured, item variance was pretty minimal and each product was included in roughly 50% of all transactions
+
 What is the most common combination of at least 1 quantity of any 3 products in a 1 single transaction?
+
+-- Define a combination count which inlcudes 3 products in 1 single transaction
+-- Determine the frequency of these combination counts to find the most common trio
+-- Join sales table on itself 2 times, in order to have 3 tables to join together
+-- Include conditional AND clause, where product_id is either less than subsequent tables prod_id, as then the combinations will be of 3 unique prod_id
+-- Count the combinations of these products 
+-- Limit it to 1 to find most common combination
+
+SELECT s.prod_id AS first_id, tab1.prod_id As second_id, tab2.prod_id AS third_id, COUNT(1) AS combination_count
+FROM balanced_tree.sales s
+JOIN balanced_tree.sales tab1 
+ON s.txn_id = tab1.txn_id
+AND s.prod_id < tab1.prod_id
+JOIN balanced_tree.sales tab2
+ON s.txn_id = tab2.txn_id
+AND tab1.prod_id < tab2.prod_id
+GROUP BY 1, 2, 3
+ORDER BY 4 DESC
+LIMIT 1;
+
+/*
+first_id	second_id	third_id	combination_count
+5d267b	  9ec847	  c8d436	  352
+*/
+
+
