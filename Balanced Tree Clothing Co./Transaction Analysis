@@ -17,6 +17,17 @@ GROUP BY 1) sub;
 
 What are the 25th, 50th and 75th percentile values for the revenue per transaction?
 
+WITH transaction_cte AS (
+SELECT txn_id, SUM(qty * price) AS revenue
+FROM balanced_tree.sales
+GROUP BY 1
+)
+
+SELECT PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY revenue) AS percentile_25,
+PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY revenue) AS percentile_50,
+PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY revenue) AS percentile_75
+FROM transaction_cte;
+
 What is the average discount value per transaction?
 
 SELECT ROUND(AVG(sub.discount_total), 2) AS avg_discounts
@@ -28,4 +39,25 @@ GROUP BY 1) sub;
 -- Average discount was 62.49 per transaction
 
 What is the percentage split of all transactions for members vs non-members?
+
+SELECT member, ROUND(100 * COUNT(member)::NUMERIC / (SELECT COUNT(member) FROM balanced_tree.sales), 2) AS member_pct
+FROM balanced_tree.sales
+GROUP BY 1;
+
+/*
+member	member_pct
+false	39.97
+true	60.03
+*/
+
 What is the average revenue for member transactions and non-member transactions?
+
+SELECT member, SUM(qty * price) AS revenue_before_discount
+FROM balanced_tree.sales
+GROUP BY 1;
+
+/*
+member	revenue_before_discount
+false	512469
+true	776984
+*/
