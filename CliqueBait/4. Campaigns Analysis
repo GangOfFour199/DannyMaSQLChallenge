@@ -206,9 +206,57 @@ clicks_purchase_count = 624
 -- With over half of all purchases, there are no ad interactions from users.
 -- Purchase count significantly increases when a user clicks an ad after the impression occurs
 -- It is uncommon for a user to only recieve an ad impression then make a purchase
+
+/**************** LOOKING AT PURCHASE RATE VIA AD IMPRESSIONS & AD CLICKS **************/
+
+WITH ad_purchases_cte AS (
+SELECT COUNT(DISTINCT user_id) AS num_users, SUM(purchase_made) AS total_purchases, 
+SUM(CASE WHEN impressions_count > 0 AND clicked_ads_count = 1 THEN purchase_made ELSE NULL END) AS clicks_purchase_count,
+SUM(CASE WHEN impressions_count = 1 AND clicked_ads_count = 0 THEN purchase_made ELSE NULL END) AS impressions_purchase_count
+FROM clique_bait.visits_summary
+)
+
+SELECT *, 
+ROUND(100 * SUM(impressions_purchase_count) / total_purchases , 2) AS impressions_rate,
+ROUND(100 * SUM(clicks_purchase_count) / total_purchases , 2) AS clicks_rate
+FROM ad_purchases_cte
+GROUP BY 1, 2, 3, 4;
+
+-- FEEDBACK
+
 -- See below, an uplift of ~30% in terms of purchase rate when a user clicks on an advertisement instead of only receiving an impression
 
 /*
-impressions only purchase pct = 6.36%
-clicks only purchase pct = 35.12%
+impressions_rate pct = 6.36%
+clicks_rate pct = 35.12%
 */
+
+/********************* BREAKING DOWN PURCHASE RATE BY CAMPAIGN ******************/
+
+WITH campaign_ad_purchases AS (
+SELECT campaign_name, COUNT(DISTINCT visit_id) AS num_visits, SUM(purchase_made) AS total_purchases, 
+SUM(CASE WHEN impressions_count > 0 AND clicked_ads_count = 1 THEN purchase_made ELSE NULL END) AS clicks_purchase_count,
+SUM(CASE WHEN impressions_count = 1 AND clicked_ads_count = 0 THEN purchase_made ELSE NULL END) AS impressions_purchase_count
+FROM clique_bait.visits_summary
+GROUP BY 1
+)
+
+SELECT *, 
+ROUND(100 * SUM(impressions_purchase_count) / total_purchases , 2) AS impressions_rate,
+ROUND(100 * SUM(clicks_purchase_count) / total_purchases , 2) AS clicks_rate
+FROM campaign_ad_purchases
+GROUP BY 1, 2, 3, 4, 5;
+
+/*
+campaign_name	num_visits	total_purchases	clicks_purchase_count	impressions_purchase_count	impressions_rate	clicks_rate
+null	512	268	87	15	5.60	32.46
+25% Off - Living The Lux Life	404	202	71	16	7.92	35.15
+Half Off - Treat Your Shellf(ish)	2388	1180	416	77	6.53	35.25
+BOGOF - Fishing For Compliments	260	127	50	5	3.94	39.37
+*/
+
+-- FEEDBACK
+
+-- Fishing for Compliments experienced the lowest impressions purchase rate % but the highest clicks purchase rate %
+-- The scale and rate of ad interactions intertwined with purchases does nominally increase when there is a campaign on as opposed to no campaign
+-- The impressions & click rates % remain consistent, even with larger scale of user traffic as visits for half off campaign quintupled compared to previous marketing events, however there is a trend.
