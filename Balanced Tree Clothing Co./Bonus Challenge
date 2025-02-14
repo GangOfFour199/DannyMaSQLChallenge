@@ -8,6 +8,10 @@ Hint: you may want to consider using a recursive CTE to solve this problem!
 -- parent id of segment level_name join onto category id
 -- This leaves remaining id between 7 to 18 to be the style id's
 
+-- To help visualise and understand proces better
+SELECT *
+FROM balanced_tree.product_hierarchy;
+
 WITH cte AS (
 SELECT ph.id AS style_id, ph.level_text AS style_name,
 tab1.id AS segment_id, tab1.level_text As segment_name, 
