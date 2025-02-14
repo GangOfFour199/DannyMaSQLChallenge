@@ -136,7 +136,79 @@ Half Off - Treat Your Shellf(ish)	5	Black Truffle	1186	5
 -- Each campaign slogan could suggest subconscious leanings to consumer behaviour. 'Fishing for Compliments' campaign experienced only instance where all 3 fish (salmon, tuna, kingfish) were in top product purchases.
 -- Meanwhile, 'Treat your Shellfish' saw its top 3 sales comprising of shellfish products
 
-/****** RELATIONSHIP BETWEEN AD IMPRESSIONS & AD CLICKS ********************/
+/************ SUCCESS OF AD INTERACTIONS FOR EACH CAMPAIGN ************/
 
+WITH ad_cte AS (
+SELECT campaign_name,
+SUM(viewed_count) AS page_views,
+SUM(CASE WHEN impressions_count = 1 THEN impressions_count ELSE NULL END) AS impressions,
+SUM(CASE WHEN clicked_ads_count = 1 THEN clicked_ads_count ELSE NULL END) AS clicks
+FROM clique_bait.visits_summary
+GROUP BY 1
+)
 
+SELECT *, 
+ROUND(100 * SUM(impressions) / page_views , 2) AS impressions_rate,
+ROUND(100 * SUM(clicks) / page_views , 2) AS clicks_rate
+FROM ad_cte
+GROUP BY 1, 2, 3, 4;
 
+/*
+campaign_name	page_views	impressions	clicks	impressions_rate	clicks_rate
+25% Off - Living The Lux Life	2434	104	81	4.27	3.33
+null	3061	129	103	4.21	3.36
+Half Off - Treat Your Shellf(ish)	13897	578	463	4.16	3.33
+BOGOF - Fishing For Compliments	1536	65	55	4.23	3.58
+*/
+
+-- FEEDBACK
+
+-- Truthfully, each campaign has not provided prominent impact on ad interactions, as both impressions & clicks rate remain close to an equilibrium across all periods
+
+SELECT campaign_name, SUM(impressions_count) AS total_impressions, SUM(clicked_ads_count) AS total_clicks,
+ROUND(100 * SUM(clicked_ads_count) / SUM(impressions_count), 2) AS click_conversion_rate
+FROM clique_bait.visits_summary
+GROUP BY 1; 
+
+/*
+campaign_name	total_impressions	total_clicks	click_conversion_rate
+null	129	103	79.84
+BOGOF - Fishing For Compliments	65	55	84.62
+Half Off - Treat Your Shellf(ish)	578	463	80.10
+25% Off - Living The Lux Life	104	81	77.88
+*/
+
+-- FEEDBACK
+
+-- Click conversion rate consistently performs around the same % benchmark, irrespective of campaign period or whether one is happening or not.
+-- Largest traffic experienced during Half Off Shellfish campaign, evidenced by the volume of impressions & clicks during period.
+
+/****** RELATIONSHIP BETWEEN AD INTERACTIONS & PURCHASES ********************/
+
+SELECT COUNT(DISTINCT user_id) AS num_users, SUM(purchase_made) AS total_purchases, 
+SUM(CASE WHEN impressions_count = 0 AND clicked_ads_count = 0 THEN purchase_made ELSE NULL END) AS no_ads_count,
+SUM(CASE WHEN impressions_count > 0 AND clicked_ads_count = 1 THEN purchase_made ELSE NULL END) AS clicks_purchase_count,
+SUM(CASE WHEN impressions_count = 1 AND clicked_ads_count = 0 THEN purchase_made ELSE NULL END) AS impressions_purchase_count,
+SUM(CASE WHEN impressions_count = 1 AND clicked_ads_count = 1 THEN purchase_made ELSE NULL END) AS impressions_clicks_purchase_count
+FROM clique_bait.visits_summary; 
+
+/*
+num_users = 500
+total_purchases	= 1777
+no_ads_purchase_count = 1040	
+impressions_purchase_count = 113	
+impressions_clicks_purchase_count = 624	
+clicks_purchase_count = 624
+*/
+
+-- FEEDBACK
+
+-- With over half of all purchases, there are no ad interactions from users.
+-- Purchase count significantly increases when a user clicks an ad after the impression occurs
+-- It is uncommon for a user to only recieve an ad impression then make a purchase
+-- See below, an uplift of ~30% in terms of purchase rate when a user clicks on an advertisement instead of only receiving an impression
+
+/*
+impressions only purchase pct = 6.36%
+clicks only purchase pct = 35.12%
+*/
