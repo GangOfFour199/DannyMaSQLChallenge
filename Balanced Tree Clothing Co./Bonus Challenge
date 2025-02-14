@@ -3,7 +3,7 @@ Use a single SQL query to transform the product_hierarchy and product_prices dat
 Hint: you may want to consider using a recursive CTE to solve this problem!
 
 -- USE RECURSIVE cte function to break down datasets into smaller ones and to take information from one column to categorise into new columns
--- Datsets brokwn down smaller into style, segment and category partitione by level_name
+-- Datsets broken down smaller into style, segment and category partitioned by level_name
 -- LEFT JOIN these sub datasets, parent id joins to segment id
 -- parent id of segment level_name join onto category id
 -- This leaves remaining id between 7 to 18 to be the style id's
