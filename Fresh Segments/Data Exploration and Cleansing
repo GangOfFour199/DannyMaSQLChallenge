@@ -1,5 +1,7 @@
 Update the fresh_segments.interest_metrics table by modifying the month_year column to be a date data type with the start of the month
 
+-- SCHEMA SQL
+
 -- DELETE OLD COLUMN
 ALTER TABLE fresh_segments.interest_metrics
 DROP COLUMN month_year;
@@ -41,8 +43,85 @@ NULL	1194
 2019-07-01	864
 2019-08-01	1149
 */
+
 What do you think we should do with these null values in the fresh_segments.interest_metrics
+
+SELECT * FROM fresh_segments.interest_metrics
+WHERE _month IS NULL
+AND _year IS NULL;
+
+/* 
+interest_id 21246 is an anomaly as it has null date values but we can trace it back to a description via its id. 
+   
+Considering the subsequent index_value, ranking & percentile_ranking provide no use without a reference to a interest_id, they are statistically insignificant and we can discard these rows from the dataset.    
+*/
+
+-- SCHEMA SQL
+
+DELETE FROM fresh_segments.interest_metrics
+WHERE interest_id IS NULL;
+
 How many interest_id values exist in the fresh_segments.interest_metrics table but not in the fresh_segments.interest_map table? What about the other way around?
+
+SELECT 
+COUNT(DISTINCT map.id) AS map_id_count,
+COUNT(DISTINCT met.interest_id) AS metrics_id_count,
+SUM(CASE WHEN map.id IS NULL THEN 1 END) AS not_in_metric,
+SUM(CASE WHEN met.interest_id is NULL THEN 1 END) AS not_in_map
+FROM fresh_segments.interest_metrics met
+FULL JOIN fresh_segments.interest_map map
+-- NOTE => must convert varchar to integer in order to join on columns and corresponding data types with postgresql!!!
+ON met.interest_id::INT = map.id;
+
+/*
+map_id_count	metrics_id_count	not_in_metric	not_in_map
+1209	1202	null	7
+*/
+
+-- Every id is included in the metrics schema, however 7 id's found in metrics schema are not located in the interest map
+
 Summarise the id values in the fresh_segments.interest_map by its total record count in this table
+
+SELECT 
+COUNT(id) AS map_id_count
+FROM fresh_segments.interest_map;
+
+-- 1209 records of id's in interest_map schema
+
 What sort of table join should we perform for our analysis and why? Check your logic by checking the rows where interest_id = 21246 in your joined output and include all columns from fresh_segments.interest_metrics and all columns from fresh_segments.interest_map except from the id column.
+
+SELECT metrics.*, map.interest_name, map.interest_summary, map.created_at, map.last_modified
+FROM fresh_segments.interest_metrics metrics
+INNER JOIN fresh_segments.interest_map map
+ON metrics.interest_id::INT = map.id
+WHERE metrics.interest_id::INT = 21246;
+
+-- We can use inner join as we are only interested in interest_id found in metrics dataset
+-- INNER JOIN selects all rows specified as long as the condition is satisfied
+-- Note with this interest_id, all date values are meaningless therefore no date related anlayses would provide any purpose involving these rows below.
+
 Are there any records in your joined table where the month_year value is before the created_at value from the fresh_segments.interest_map table? Do you think these values are valid and why?
+
+SELECT COUNT(1) AS count
+FROM fresh_segments.interest_metrics metrics
+JOIN fresh_segments.interest_map map
+ON metrics.interest_id::INT = map.id
+WHERE metrics.month_year < map.created_at
+AND _month IS NOT NULL;
+
+/*** There are 188 records where month_year value is before the created_at value. ***/
+
+-- However, the month_year value was set to include the first day of the month when we updated the table at the beginning.
+-- We can check if all the month_year values existed in the same month of all created_at date values.
+
+SELECT COUNT(1) AS count
+FROM fresh_segments.interest_metrics metrics
+JOIN fresh_segments.interest_map map
+ON metrics.interest_id::INT = map.id
+WHERE metrics.month_year < DATE_TRUNC('MONTH', map.created_at)
+AND _month IS NOT NULL;
+
+/*** There are 0 records, meaning all 188 records where month_year date is earlier than created_at date, exist within the same month as each other. ***/
+
+-- As a result, these datapoints are still valid and ready to be analysed.
+
