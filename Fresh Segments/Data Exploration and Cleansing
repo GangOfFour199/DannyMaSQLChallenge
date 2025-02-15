@@ -1,5 +1,46 @@
 Update the fresh_segments.interest_metrics table by modifying the month_year column to be a date data type with the start of the month
+
+-- DELETE OLD COLUMN
+ALTER TABLE fresh_segments.interest_metrics
+DROP COLUMN month_year;
+
+-- CREATE NEW COLUMN WITH DATE DATA TYPE
+ALTER TABLE fresh_segments.interest_metrics
+ADD month_year DATE;
+
+-- UPDATE TABLE AND SET VALUES VIA CONCAT_WS() TO INSERT INTO NEW month_year COLUMN
+UPDATE fresh_segments.interest_metrics
+SET month_year = TO_DATE(CONCAT_WS('-', '01', _month, _year), 'DD-MM-YYYY');
+
+SELECT * 
+FROM fresh_segments.interest_metrics
+LIMIT 25;
+
 What is count of records in the fresh_segments.interest_metrics for each month_year value sorted in chronological order (earliest to latest) with the null values appearing first?
+
+SELECT month_year, COUNT(1) AS records
+FROM fresh_segments.interest_metrics
+GROUP BY 1
+ORDER BY 1;
+
+/*
+month_year	records
+NULL	1194
+2018-07-01	729
+2018-08-01	767
+2018-09-01	780
+2018-10-01	857
+2018-11-01	928
+2018-12-01	995
+2019-01-01	973
+2019-02-01	1121
+2019-03-01	1136
+2019-04-01	1099
+2019-05-01	857
+2019-06-01	824
+2019-07-01	864
+2019-08-01	1149
+*/
 What do you think we should do with these null values in the fresh_segments.interest_metrics
 How many interest_id values exist in the fresh_segments.interest_metrics table but not in the fresh_segments.interest_map table? What about the other way around?
 Summarise the id values in the fresh_segments.interest_map by its total record count in this table
