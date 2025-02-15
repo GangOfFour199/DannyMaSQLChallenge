@@ -53,7 +53,7 @@ AND _year IS NULL;
 /* 
 interest_id 21246 is an anomaly as it has null date values but we can trace it back to a description via its id. 
    
-Considering the subsequent index_value, ranking & percentile_ranking provide no use without a reference to a interest_id, they are statistically insignificant and we can discard these rows from the dataset.    
+Considering the subsequent index_value, ranking & percentile_ranking provide no use without a reference to an interest_id, they are statistically insignificant and we can discard these rows from the dataset.    
 */
 
 -- SCHEMA SQL
