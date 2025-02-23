@@ -64,8 +64,6 @@ If we were to remove all interest_id values which are lower than the total_month
 
 WITH discard_cte AS (SELECT mt.interest_id, COUNT(DISTINCT mt.month_year) AS total_months
 FROM fresh_segments.interest_metrics mt
-JOIN fresh_segments.interest_map mp
-ON mt.interest_id::INT = mp.id
 WHERE mt._month IS NOT NULL
 AND mt._month IS NOT NULL
 GROUP BY 1
