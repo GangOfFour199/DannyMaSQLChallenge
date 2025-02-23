@@ -79,4 +79,98 @@ ON met.interest_id = disc.interest_id;
 -- 400 rows to remove
 
 Does this decision make sense to remove these data points from a business perspective? Use an example where there are all 14 months present to a removed interest example for your arguments - think about what it means to have less months present from a segment perspective.
+
+-- First expression collates all the counts of interests we wish to discard as cumulative % by month below 90%
+WITH discard_cte AS (
+SELECT mt.interest_id, COUNT(DISTINCT mt.month_year) AS total_months
+FROM fresh_segments.interest_metrics mt
+WHERE mt._month IS NOT NULL
+AND mt._month IS NOT NULL
+GROUP BY 1
+HAVING COUNT(DISTINCT mt.month_year) < 6
+),
+-- second expression collates all the counts of interests grouped by month_year that will be removed under condition of total_months < 6 in discard_cte
+mth_cte AS (
+SELECT month_year, COUNT(1) AS total_removed
+FROM fresh_segments.interest_metrics mt
+RIGHT JOIN discard_cte ds
+ON mt.interest_id = ds.interest_id
+GROUP BY 1
+),
+-- original cte collates the count of all interest grouped by month_year as they were
+original_cte AS (
+SELECT month_year, COUNT(*) AS total_original
+FROM fresh_segments.interest_metrics 
+WHERE _month IS NOT NULL
+AND _year IS NOT NULL
+GROUP BY 1
+)
+-- select the rows necessary by combining cte's
+SELECT o.month_year, o.total_original, m.total_removed,
+ROUND(100* SUM(total_removed) / SUM(total_original), 2) AS removal_pct
+FROM original_cte o
+JOIN mth_cte m
+ON o.month_year = m.month_year
+GROUP BY 1, 2, 3 
+ORDER BY 1;
+
+/*
+month_year	total_original	total_removed	removal_pct
+2018-07-01	729	20	2.74
+2018-08-01	767	15	1.96
+2018-09-01	780	6	0.77
+2018-10-01	857	4	0.47
+2018-11-01	928	3	0.32
+2018-12-01	995	9	0.90
+2019-01-01	973	7	0.72
+2019-02-01	1121	49	4.37
+2019-03-01	1136	58	5.11
+2019-04-01	1099	64	5.82
+2019-05-01	857	30	3.50
+2019-06-01	824	20	2.43
+2019-07-01	864	28	3.24
+2019-08-01	1149	87	7.57
+*/
+
+-- Each removal % discovered appears to be minute in the bigger picture, it is not a large quantity of data to be discarded per month_year category and will not drastcially alter the representative trends of the data as a whole
+
+-- Discarding these data points could prove beneficial marketing wise, it streamlines customers into engaging with less niche and more popular interest categories. By doing this, business performance and efficiency can augment
+
 After removing these interests - how many unique interests are there for each month?
+
+
+WITH discard_cte AS (
+SELECT mt.interest_id, COUNT(DISTINCT mt.month_year) AS total_months
+FROM fresh_segments.interest_metrics mt
+WHERE mt._month IS NOT NULL
+AND mt._month IS NOT NULL
+GROUP BY 1
+HAVING COUNT(DISTINCT mt.month_year) < 6
+)
+
+SELECT month_year, COUNT(1) AS remaining_interests_count
+FROM fresh_segments.interest_metrics mt
+JOIN discard_cte ds
+ON mt.interest_id = ds.interest_id
+WHERE mt._month IS NOT NULL
+AND mt._year IS NOT NULL
+GROUP BY 1
+ORDER BY 1;
+
+/*
+month_year	remaining_interests_count
+2018-07-01	20
+2018-08-01	15
+2018-09-01	6
+2018-10-01	4
+2018-11-01	3
+2018-12-01	9
+2019-01-01	7
+2019-02-01	49
+2019-03-01	58
+2019-04-01	64
+2019-05-01	30
+2019-06-01	20
+2019-07-01	28
+2019-08-01	87
+*/
