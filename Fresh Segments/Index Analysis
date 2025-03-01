@@ -25,6 +25,7 @@ WHERE comp_ranking <= 10;
 -- SAMPLE OF QUERY FOR '01-2019'
 
 /*
+month_year	interest_id	interest_name	avg_composition	comp_ranking
 2019-01-01	21057	Work Comes First Travelers	7.66	1
 2019-01-01	6065	Solar Energy Researchers	7.05	2
 2019-01-01	21245	Readers of Honduran Content	6.67	3
