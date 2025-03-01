@@ -143,6 +143,13 @@ month_year	top10_avg_composition
 
 What is the 3 month rolling average of the max average composition value from September 2018 to August 2019 and include the previous top ranking interests in the same output shown below.
 
+-- 1. Step 1, create cte that computes average composition value into the dataset
+-- 2. Step 2, create cte that ranks rows by average compositon value
+-- 3. Step 3, using our results from step 2 create a cte that only shows data where we have filtered ranking to show max value of the average of average composition, grouped by month. This gives the max_index_composition column.
+-- 4. Step 4, use a cte to calculate the three month avg. Take max value of avg_average_comp and filter using preceding rows for a total of 3 months
+-- 5. Step 5, use lag() func to find previous interest_name and avg_comp values for one month and two months previous. Concat values of interest_name and avg_average_comp value for final two desired columns. Always ensure these lag are grouped by month_year and refer back in sequential order ascendingly
+-- 6. Final query, ensure we have no null values present in one_month_ago and two_months_ago cols, by check if avg_average_comp values are NOT NULL for first & second month_year rows.
+
 WITH comp_cte AS (
 SELECT met.month_year, met.interest_id, map.interest_name, ROUND((met.composition / met.index_value)::NUMERIC, 2) AS avg_composition
 FROM fresh_segments.interest_metrics met
@@ -180,3 +187,8 @@ FROM lag_cte
 WHERE one_month IS NOT NULL AND two_months IS NOT NULL;
 
 Provide a possible reason why the max average composition might change from month to month? Could it signal something is not quite right with the overall business model for Fresh Segments?
+
+-- Uisng an example of travelling, during peak tourism months, it would be expected that more users would interact with these interest as opposed to off-peak months. Therefore, relative to season interactions would be higher or lower.
+-- From May 2019 onwards, the max_index_composition dropped noticeably compared to the previous months, this might be due to the fact that there is now a much more varied spread of interests interacted with in their customer lists, which are in turn provided to the fresh segments agency.
+-- If customers utilise the client's service/product consistently, they may see the same advertisements repeatedly, therefore they begin to interact with ad content under new interests.
+-- This varied spread of interest interactions may have been a deliberate ploy by the client, in order to diversify consumption of ad content to their customers, so each interest would represent a lesser proportion of ad interactions (composition value).
