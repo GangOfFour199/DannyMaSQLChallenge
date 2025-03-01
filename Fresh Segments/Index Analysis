@@ -3,7 +3,145 @@ The index_value is a measure which can be used to reverse calculate the average 
 Average composition can be calculated by dividing the composition column by the index_value column rounded to 2 decimal places.
 
 What is the top 10 interests by the average composition for each month?
+
+WITH comp_cte AS (
+SELECT met.month_year, met.interest_id, map.interest_name, ROUND((met.composition / met.index_value)::NUMERIC, 2) AS avg_composition
+FROM fresh_segments.interest_metrics met
+JOIN fresh_segments.interest_map map
+ON met.interest_id::INT = map.id
+WHERE met._month IS NOT NULL
+AND met._year IS NOT NULL
+GROUP BY 1, 2, 3, 4
+),
+rank_cte AS (
+SELECT month_year, interest_id, interest_name, avg_composition, RANK() OVER(PARTITION BY month_year ORDER BY avg_composition DESC) AS comp_ranking
+FROM comp_cte
+)
+
+SELECT *
+FROM rank_cte
+WHERE comp_ranking <= 10;
+
+-- SAMPLE OF QUERY FOR '01-2019'
+
+/*
+month_year	interest_id	interest_name	avg_composition	comp_ranking
+01-2019	21057	Work Comes First Travelers	7.66	1
+01-2019	6065	Solar Energy Researchers	7.05	2
+01-2019	21245	Readers of Honduran Content	6.67	3
+01-2019	18783	Nursing and Physicians Assistant Journal Researchers	6.46	4
+01-2019	5969	Luxury Bedding Shoppers	6.46	4
+01-2019	7541	Alabama Trip Planners	6.44	6
+01-2019	10981	New Years Eve Party Ticket Purchasers	6.16	7
+01-2019	34	Teen Girl Clothing Shoppers	5.96	8
+01-2019	10977	Christmas Celebration Researchers	5.65	9
+01-2019	15878	Readers of Catholic News	5.48	10
+01-2019	21237	Chelsea Fans	5.48	10
+*/
+
 For all of these top 10 interests - which interest appears the most often?
+
+WITH comp_cte AS (
+SELECT met.month_year, met.interest_id, map.interest_name, ROUND((met.composition / met.index_value)::NUMERIC, 2) AS avg_composition
+FROM fresh_segments.interest_metrics met
+JOIN fresh_segments.interest_map map
+ON met.interest_id::INT = map.id
+WHERE met._month IS NOT NULL
+AND met._year IS NOT NULL
+GROUP BY 1, 2, 3, 4
+),
+rank_cte AS (
+SELECT month_year, interest_id, interest_name, avg_composition, RANK() OVER(PARTITION BY month_year ORDER BY avg_composition DESC) AS comp_ranking
+FROM comp_cte
+),
+top_10_cte AS (
+SELECT *
+FROM rank_cte
+WHERE comp_ranking <= 10 
+)
+
+SELECT interest_name, COUNT(1) AS appearances
+FROM top_10_cte
+GROUP BY 1
+ORDER BY 2 DESC;
+
+/*
+interest_name	appearances
+Luxury Bedding Shoppers	10
+Alabama Trip Planners	10
+Solar Energy Researchers	10
+New Years Eve Party Ticket Purchasers	9
+Readers of Honduran Content	9
+Nursing and Physicians Assistant Journal Researchers	9
+Teen Girl Clothing Shoppers	8
+Work Comes First Travelers	8
+Christmas Celebration Researchers	7
+Gym Equipment Owners	5
+Recently Retired Individuals	5
+Luxury Retail Shoppers	5
+Las Vegas Trip Planners	5
+Furniture Shoppers	5
+Asian Food Enthusiasts	5
+Cosmetics and Beauty Shoppers	5
+Readers of Catholic News	4
+Restaurant Supply Shoppers	4
+PlayStation Enthusiasts	4
+Medicare Researchers	3
+Medicare Provider Researchers	2
+Chelsea Fans	2
+Medicare Price Shoppers	1
+Cruise Travel Intenders	1
+Family Adventures Travelers	1
+HDTV Researchers	1
+Video Gamers	1
+Marijuana Legalization Advocates	1
+Gamers	1
+Luxury Boutique Hotel Researchers	1
+*/
+
 What is the average of the average composition for the top 10 interests for each month?
+
+WITH comp_cte AS (
+SELECT met.month_year, met.interest_id, map.interest_name, ROUND((met.composition / met.index_value)::NUMERIC, 2) AS avg_composition
+FROM fresh_segments.interest_metrics met
+JOIN fresh_segments.interest_map map
+ON met.interest_id::INT = map.id
+WHERE met._month IS NOT NULL
+AND met._year IS NOT NULL
+GROUP BY 1, 2, 3, 4
+),
+rank_cte AS (
+SELECT month_year, interest_id, interest_name, avg_composition, RANK() OVER(PARTITION BY month_year ORDER BY avg_composition DESC) AS comp_ranking
+FROM comp_cte
+),
+top_10_cte AS (
+SELECT *
+FROM rank_cte
+WHERE comp_ranking <= 10 
+)
+
+SELECT month_year, ROUND(AVG(avg_composition), 2) AS top10_avg_composition
+FROM top_10_cte
+GROUP BY 1
+ORDER BY 1 DESC;
+
+/*
+month_year	top10_avg_composition
+12-2018	6.65
+11-2018	6.62
+10-2018	7.07
+09-2018	6.90
+08-2019	2.63
+08-2018	5.95
+07-2019	2.77
+07-2018	6.04
+06-2019	2.43
+05-2019	3.54
+04-2019	5.75
+03-2019	6.12
+02-2019	6.58
+01-2019	6.32
+*/
+
 What is the 3 month rolling average of the max average composition value from September 2018 to August 2019 and include the previous top ranking interests in the same output shown below.
 Provide a possible reason why the max average composition might change from month to month? Could it signal something is not quite right with the overall business model for Fresh Segments?
