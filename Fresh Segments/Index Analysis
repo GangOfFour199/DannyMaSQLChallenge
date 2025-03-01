@@ -25,7 +25,16 @@ WHERE comp_ranking <= 10;
 -- SAMPLE OF QUERY FOR '01-2019'
 
 /*
-
+2019-01-01	21057	Work Comes First Travelers	7.66	1
+2019-01-01	6065	Solar Energy Researchers	7.05	2
+2019-01-01	21245	Readers of Honduran Content	6.67	3
+2019-01-01	18783	Nursing and Physicians Assistant Journal Researchers	6.46	4
+2019-01-01	5969	Luxury Bedding Shoppers	6.46	4
+2019-01-01	7541	Alabama Trip Planners	6.44	6
+2019-01-01	10981	New Years Eve Party Ticket Purchasers	6.16	7
+2019-01-01	34	Teen Girl Clothing Shoppers	5.96	8
+2019-01-01	10977	Christmas Celebration Researchers	5.65	9
+2019-01-01	21237	Chelsea Fans	5.48	10
 */
 
 For all of these top 10 interests - which interest appears the most often?
